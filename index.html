@@ -400,7 +400,7 @@ let searchWake = 0;
 async function searchAPI(term, limit){
   const url = apiBase(term, limit);
   // 서버를 너무 자주 두드리지 않도록 최소 간격
-  const gap = 450 - (Date.now() - searchWake);
+  const gap = 300 - (Date.now() - searchWake);
   if(gap > 0) await new Promise(r => setTimeout(r, gap));
   searchWake = Date.now();
   const order = LIVE.mode === 'jsonp' ? ['jsonp','fetch'] : ['fetch','jsonp'];
@@ -475,12 +475,21 @@ function bucketOfName(name){
   return null;
 }
 
+function langBuckets(l){
+  if(l === 'ja') return ['jp_rock'];
+  if(l === 'ko') return ['kr_indie','k_pop','kr_hiphop','band_rock','old_ballad'];
+  if(l === 'en') return ['jazz_lofi','west_pop','game_ost'];
+  return [];
+}
+
 function weightedBuckets(sit){
   const buckets = Object.keys(SEEDS);
+  const langB = state.lang === 'all' ? [] : langBuckets(state.lang);
   return buckets.map(function(b){
     let s = Math.random() * 1.6;
     s += (store.w[b] || 0) * 2.4;
     if(sit.buckets.indexOf(b) >= 0) s += 1.5;
+    if(state.lang !== 'all') s += (langB.indexOf(b) >= 0 ? 3.5 : -2.2);
     return {b:b, s:s};
   }).sort(function(x,y){ return y.s - x.s; }).map(function(x){ return x.b; });
 }
@@ -532,7 +541,7 @@ async function livePick(n, sit, budgetMs){
   const want = Math.min(n, 5);
   const perQuery = 2;          // 한 아티스트에서 최대 2곡씩만 → 한 번에 여러 아티스트가 섞인다
   const got = [];
-  const queries = nextQueries();
+  const queries = nextQueries().slice(0, 4);
   const deadline = Date.now() + (budgetMs || 4500);
   let qi = 0;
   while(got.length < want && qi < queries.length && Date.now() < deadline){
