@@ -287,7 +287,7 @@ const SEEDS = {
   kr_hiphop: ['Beenzino','DEAN','pH-1','Kid Milli','Leellamarz','Sik-K','Wonstein','BIG Naughty','E SENS','BewhY',
               'Coogie','ZICO','Giriboy','HAON','B.I','JUNNY','BLASÉ','Leellamarz','한요한']
 };
-const BAD_TITLE = /(instrumental|inst\.|karaoke|remix|\blive\b|cover|orchestra version|acoustic version|sped up|slowed|8d audio|mr\b|伴奏|カラオケ|오르골)/i;
+const BAD_TITLE = /(instrumental|inst\.|karaoke|remix|\blive\b|cover|tribute|christmas|santa claus|silent night|jingle bells|orchestra version|acoustic version|sped up|slowed|8d audio|mr\b|伴奏|カラオケ|오르골)/i;
 const GENRE_TERMS = {
   kr_indie:  ['korean indie', 'k-indie', 'korean r&b', 'kr indie rock'],
   jp_rock:   ['city pop', 'japanese rock', 'j-pop', 'japanese city pop'],
@@ -344,6 +344,15 @@ function langOf(t, a, bucket){
   if(bucket === 'jp_rock') return 'ja';
   return 'en';
 }
+function artistMatches(term, artistName){
+  function nn(s){ return String(s || '').toLowerCase().replace(/[^0-9a-z가-힣ぁ-んァ-ヶ]/g, ''); }
+  const t = nn(term), a = nn(artistName);
+  if(!t || !a) return false;
+  if(a.indexOf(t) >= 0 || t.indexOf(a) >= 0) return true;
+  const toks = String(term).toLowerCase().split(/[\s,&()]+/).map(nn).filter(function(x){ return x.length > 2; });
+  return toks.some(function(x){ return a.indexOf(x) >= 0; });
+}
+
 function apiTrack(r, bucket){
   if(!r || !r.t || !r.a) return null;
   if(r.kind && r.kind !== 'song') return null;
@@ -482,7 +491,7 @@ function nextQueries(){
   const liked = (store.likes || []).map(function(l){ return artistOfLike(l.a); }).filter(Boolean);
   if(liked.length){
     const a = liked[Math.floor(Math.random() * liked.length)];
-    out.push({term:a, bucket:bucketOfName(a) || sit.buckets[0] || 'kr_indie', why:'좋아요한 아티스트'});
+    out.push({term:a, bucket:bucketOfName(a) || sit.buckets[0] || 'kr_indie', why:'좋아요한 아티스트', kind:'artist'});
   }
   weightedBuckets(sit).forEach(function(b){
     const pool = (SEEDS[b] || []).slice();
@@ -490,12 +499,12 @@ function nextQueries(){
     const fresh = pool.filter(function(x){ return LIVE.recent.indexOf(x) < 0; });
     if(fresh.length){
       const name = fresh[0];
-      if(!out.some(function(o){ return o.term === name; })) out.push({term:name, bucket:b, why:'취향 시드'});
+      if(!out.some(function(o){ return o.term === name; })) out.push({term:name, bucket:b, why:'취향 시드', kind:'artist'});
     }else{
       // 이 장르의 시드 아티스트를 다 돌았으면 장르 키워드로 발굴 범위를 넓힌다
       const terms = (GENRE_TERMS[b] || []).filter(function(x){ return LIVE.recent.indexOf(x) < 0; });
       const term = (terms.length ? terms : (GENRE_TERMS[b] || [b]))[0];
-      if(!out.some(function(o){ return o.term === term; })) out.push({term:term, bucket:b, why:'장르 키워드'});
+      if(!out.some(function(o){ return o.term === term; })) out.push({term:term, bucket:b, why:'장르 키워드', kind:'genre'});
     }
   });
   return out;
@@ -540,6 +549,7 @@ async function livePick(n, sit, budgetMs){
       if(got.some(function(g){ return g.i === tr.i; })) continue;
       tr.why = q.why;
       tr.seedTerm = q.term;
+      if(q.kind !== 'genre' && !artistMatches(q.term, tr.a)) continue;   // 검색어와 무관한 다른 아티스트 결과 제외
       cands.push({tr:tr, s:score(tr, sit, state.mood, state.tempo)});
     }
     cands.sort(function(a,b){ return b.s - a.s; });
