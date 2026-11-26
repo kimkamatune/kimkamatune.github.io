@@ -288,6 +288,32 @@ const SEEDS = {
               'Coogie','ZICO','Giriboy','HAON','B.I','JUNNY','BLASÉ','Leellamarz','한요한']
 };
 const BAD_TITLE = /(instrumental|inst\.|karaoke|remix|\blive\b|cover|orchestra version|acoustic version|sped up|slowed|8d audio|mr\b|伴奏|カラオケ|오르골)/i;
+const GENRE_TERMS = {
+  kr_indie:  ['korean indie', 'k-indie', 'korean r&b', 'kr indie rock'],
+  jp_rock:   ['city pop', 'japanese rock', 'j-pop', 'japanese city pop'],
+  k_pop:     ['k-pop', 'kpop girl group', 'kpop boy group', 'korean pop'],
+  band_rock: ['korean rock band', 'j-rock band', 'korean indie band'],
+  jazz_lofi: ['lofi', 'jazz piano', 'bossa nova', 'acoustic jazz'],
+  kr_hiphop: ['korean hip hop', 'k-hiphop', 'korean rap']
+};
+
+/* 이미 내장 큐레이션에 있는 곡은 실시간 발굴에서 제외해 같은 곡이 또 나오지 않게 한다 */
+function baseTitle(s){
+  return String(s).toLowerCase()
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\[[^\]]*\]/g, ' ')
+    .replace(/\s-\s.*$/, ' ')
+    .replace(/[^0-9a-z가-힣ぁ-んァ-ヶ]/g, '');
+}
+let BASE_TITLES = null;
+function knownTitle(title){
+  if(!BASE_TITLES){
+    BASE_TITLES = {};
+    TRACKS.forEach(function(t){ BASE_TITLES[baseTitle(t.t)] = 1; });
+  }
+  const b = baseTitle(title);
+  return b.length > 1 && BASE_TITLES[b] === 1;
+}
 
 function hash32(s){
   let h = 2166136261;
@@ -322,6 +348,7 @@ function apiTrack(r, bucket){
   if(!r || !r.t || !r.a) return null;
   if(r.kind && r.kind !== 'song') return null;
   if(BAD_TITLE.test(r.t)) return null;
+  if(knownTitle(r.t)) return null;
   const p = PROFILE[bucket] || PROFILE.kr_indie;
   const seed = r.t + '|' + r.a + '|' + r.id;
   const hv = hash32(seed);
@@ -461,8 +488,15 @@ function nextQueries(){
     const pool = (SEEDS[b] || []).slice();
     for(let i=pool.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); const t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
     const fresh = pool.filter(function(x){ return LIVE.recent.indexOf(x) < 0; });
-    const name = (fresh[0] || pool[0]);
-    if(name && !out.some(function(o){ return o.term === name; })) out.push({term:name, bucket:b, why:'취향 시드'});
+    if(fresh.length){
+      const name = fresh[0];
+      if(!out.some(function(o){ return o.term === name; })) out.push({term:name, bucket:b, why:'취향 시드'});
+    }else{
+      // 이 장르의 시드 아티스트를 다 돌았으면 장르 키워드로 발굴 범위를 넓힌다
+      const terms = (GENRE_TERMS[b] || []).filter(function(x){ return LIVE.recent.indexOf(x) < 0; });
+      const term = (terms.length ? terms : (GENRE_TERMS[b] || [b]))[0];
+      if(!out.some(function(o){ return o.term === term; })) out.push({term:term, bucket:b, why:'장르 키워드'});
+    }
   });
   return out;
 }
@@ -486,7 +520,8 @@ function passFilters(tr){
 }
 
 async function livePick(n, sit, budgetMs){
-  const want = Math.min(n, 4);
+  const want = Math.min(n, 5);
+  const perQuery = 2;          // 한 아티스트에서 최대 2곡씩만 → 한 번에 여러 아티스트가 섞인다
   const got = [];
   const queries = nextQueries();
   const deadline = Date.now() + (budgetMs || 4500);
@@ -508,11 +543,22 @@ async function livePick(n, sit, budgetMs){
       cands.push({tr:tr, s:score(tr, sit, state.mood, state.tempo)});
     }
     cands.sort(function(a,b){ return b.s - a.s; });
-    for(let i=0;i<cands.length && got.length<want;i++){
+    let taken = 0;
+    for(let i=0;i<cands.length && got.length<want && taken<perQuery;i++){
       const tr = cands[i].tr;
       if(got.some(function(g){ return g.i === tr.i; })) continue;
       got.push(tr);
+      taken++;
     }
+  }
+  // 여러 아티스트가 섞이도록 순서 섞기(첫 곡은 최적 점수 유지)
+  if(got.length > 2){
+    const head = got[0];
+    const rest = got.slice(1);
+    for(let i=rest.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); const t=rest[i]; rest[i]=rest[j]; rest[j]=t; }
+    got.length = 0;
+    got.push(head);
+    rest.forEach(function(x){ got.push(x); });
   }
   got.forEach(function(tr){ markSeen(tr.i); LIVE.mined++; });
   return got;
