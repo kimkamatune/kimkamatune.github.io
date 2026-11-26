@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🎵 김카마튠 — 음악 추천기</title>
+<style>
+  :root{
+    --bg:#0b0d10; --bg2:#12161c; --card:#171c24; --line:#242c38;
+    --txt:#eef2f7; --sub:#9aa7b8; --accent:#1ed760; --accent2:#8b5cf6;
+    --like:#1ed760; --pass:#ff5d73;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:radial-gradient(1200px 600px at 10% -10%, #1b2a3a 0%, transparent 60%),
+                        radial-gradient(900px 500px at 100% 0%, #2a1b3a 0%, transparent 55%), var(--bg);
+    color:var(--txt); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    -webkit-font-smoothing:antialiased; padding-bottom:40px;
+  }
+  header{padding:22px 18px 10px; max-width:760px; margin:0 auto}
+  .logo{display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px; letter-spacing:-.2px}
+  .logo span.dot{color:var(--accent)}
+  .sub{color:var(--sub); font-size:13px; margin-top:6px; line-height:1.5}
+  main{max-width:760px; margin:0 auto; padding:14px 18px}
+  .panel{display:none}
+  .panel.on{display:block}
+  .grp{margin:16px 0 6px}
+  .grp h3{margin:0 0 8px; font-size:12.5px; color:var(--sub); font-weight:700; letter-spacing:.4px}
+  .chips{display:flex; flex-wrap:wrap; gap:7px}
+  .chip{
+    background:var(--bg2); border:1px solid var(--line); color:var(--txt); border-radius:11px;
+    padding:8px 13px; font-size:13.5px; font-weight:600; cursor:pointer; transition:.15s; user-select:none;
+  }
+  .chip:hover{border-color:#3b4759}
+  .chip.on{background:linear-gradient(180deg,#1ed76033,#1ed76018); border-color:var(--accent); color:#d9ffe7}
+  .moodchip.on{background:linear-gradient(180deg,#8b5cf633,#8b5cf618); border-color:var(--accent2); color:#e9ddff}
+  .go{
+    width:100%; margin-top:18px; border:0; border-radius:14px; padding:15px; font-size:15.5px; font-weight:800;
+    color:#04140a; background:linear-gradient(180deg,#2ee86c,#16b64c); cursor:pointer; letter-spacing:-.2px;
+  }
+  .go:active{transform:translateY(1px)}
+  .cards{display:flex; flex-direction:column; gap:12px; margin-top:18px}
+  .card{background:linear-gradient(180deg,#1a212b,#141a22); border:1px solid var(--line); border-radius:16px; padding:15px 15px 13px; animation:pop .28s ease-out}
+  @keyframes pop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+  .card .top{display:flex; justify-content:space-between; gap:10px; align-items:flex-start}
+  .ttl{font-size:16px; font-weight:800; letter-spacing:-.2px; line-height:1.28; word-break:break-word}
+  .art{color:var(--sub); font-size:13px; margin-top:3px; word-break:break-word}
+  .badge{font-size:10.5px; font-weight:800; padding:4px 7px; border-radius:7px; white-space:nowrap}
+  .badge.new{background:#8b5cf62e; color:#c9b4ff; border:1px solid #8b5cf655}
+  .badge.own{background:#ffffff10; color:#9aa7b8; border:1px solid #ffffff18}
+  .tags{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
+  .tag{font-size:11.5px; color:#c7d3e2; background:#ffffff0d; border:1px solid #ffffff12; padding:4px 8px; border-radius:8px}
+  .why{font-size:12.5px; color:#8fd7a7; margin-top:10px; line-height:1.5}
+  .acts{display:flex; flex-wrap:wrap; gap:7px; margin-top:12px}
+  .acts button{
+    flex:1 1 calc(50% - 4px); min-width:0; border-radius:11px; padding:10px 4px; font-size:12.5px; font-weight:800;
+    cursor:pointer; border:1px solid var(--line); background:#0f141b; color:var(--txt);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .acts .like{border-color:#1ed76055; color:#7bf0a5}
+  .acts .pass{border-color:#ff5d7355; color:#ff9aa8}
+  .acts .sp, .acts .yt, .acts .melon{flex:1 1 calc(33.333% - 5px); font-size:12px; padding:10px 2px}
+  .acts .sp{border-color:#1ed76055; color:#8ef0b1}
+  .acts .yt{border-color:#ff5d7355; color:#ffb3bd}
+  .acts .melon{border-color:#00cd3c66; color:#a8ffcf}
+  .mini{font-size:11.5px; color:var(--sub); text-align:center; margin-top:14px; line-height:1.6}
+  .stats{margin-top:16px; background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:14px}
+  .stats h4{margin:0 0 10px; font-size:13px; color:var(--sub)}
+  .bar{display:flex; align-items:center; gap:8px; margin:6px 0; font-size:12px}
+  .bar .nm{width:96px; color:#c7d3e2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .bar .tr{flex:1; height:7px; background:#ffffff0d; border-radius:99px; overflow:hidden}
+  .bar .fl{height:100%; background:linear-gradient(90deg,#1ed760,#8b5cf6); border-radius:99px}
+  .bar .vl{width:34px; text-align:right; color:var(--sub)}
+  .dna h2{font-size:17px; margin:20px 0 8px}
+  .dna p{color:#c2cedd; font-size:13.5px; line-height:1.72; margin:8px 0}
+  .dna ul{color:#c2cedd; font-size:13.5px; line-height:1.7; padding-left:20px}
+  .kv{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0}
+  .kv div{background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:11px}
+  .kv b{display:block; font-size:17px; color:#fff}
+  .kv span{font-size:11.5px; color:var(--sub)}
+  .lib{display:flex; flex-direction:column; gap:9px}
+  .lib .row{display:flex; justify-content:space-between; align-items:center; gap:10px; background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:11px 12px}
+  .lib .row .t{font-size:13.5px; font-weight:700}
+  .lib .row .s{font-size:11.5px; color:var(--sub); margin-top:2px}
+  .lib a{color:var(--accent); font-size:11.5px; text-decoration:none; font-weight:700}
+  .empty{color:var(--sub); font-size:13px; text-align:center; padding:26px 0; line-height:1.7}
+  .toast{
+    position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px); opacity:0;
+    background:#e9fff2; color:#06220f; font-weight:800; font-size:13px; padding:11px 16px; border-radius:12px;
+    transition:.25s; pointer-events:none; z-index:9; box-shadow:0 8px 24px #0009;
+  }
+  .toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+  footer{max-width:760px; margin:26px auto 0; padding:0 18px; color:#5f6b7c; font-size:11px; line-height:1.7}
+  footer a{color:#7f8b9c}
+  .resetlink{background:none; border:0; color:#6b7787; font-size:11.5px; text-decoration:underline; cursor:pointer; margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🎵 김카마튠 <span class="dot">·</span> <span style="font-weight:600;font-size:14px;color:#9aa7b8">음악 추천기</span></div>
+  <div class="sub">상황·기분·템포를 고르면 취향에 맞는 곡을 골라 주는 김카마튠 음악 추천기입니다.<br>
+  좋아요·패스를 누를수록 이 브라우저의 추천이 더 정확해집니다.</div>
+</header>
+
+<main>
+  <!-- 추천 -->
+  <section class="panel on" id="p-rec">
+    <div class="grp"><h3>지금 상황</h3><div class="chips" id="sit"></div></div>
+    <div class="grp"><h3>기분</h3><div class="chips" id="mood"></div></div>
+    <div class="grp"><h3>템포</h3><div class="chips" id="tempo"></div></div>
+    <div class="grp"><h3>언어</h3><div class="chips" id="lang"></div></div>
+    <button class="go" id="pick">🎧 이 조건으로 5곡 추천</button>
+    <div class="cards" id="cards"></div>
+    <div class="mini" id="hint">위에서 상황을 고르고 버튼을 누르면 추천이 시작됩니다.</div>
+    <div class="stats" id="stats" style="display:none">
+      <h4>학습된 취향 (좋아요·패스 반영)</h4>
+      <div id="bars"></div>
+      <button class="resetlink" id="reset">학습 기록 초기화</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  307곡의 큐레이션 데이터에서 곡·아티스트·분위기를 확인해 추천합니다. 로그인 없이도 스포티파이·유튜브·멜론 검색 링크로 바로 열립니다.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script id="data" type="application/json">{"generated":"2026-11-26","tracks":[{"i":1,"t":"pupa","a":"natori","b":"jp_rock","e":3,"bpm":110,"lang":"ja","m":["설렘","집중"],"id":"4vscWAWW13kNtdyTq724hd","local":false},{"i":2,"t":"REC","a":"COOING","b":"kr_indie","e":2,"bpm":97,"lang":"ko","m":["차분","새벽"],"id":"2nqxfHNft9Ao486c5EhvaJ","local":false},{"i":3,"t":"Next Chapter","a":"Hearts2Hearts (하츠투하츠)","b":"k_pop","e":4,"bpm":126,"lang":"ko","m":["신남","설렘"],"id":"0eTzMGetnDvA6G3QpQc2d4","local":false},{"i":4,"t":"처음투성이 (Baby Steps)","a":"Hearts2Hearts (하츠투하츠)","b":"k_pop","e":4,"bpm":121,"lang":"ko","m":["신남","설렘"],"id":"33hvf4epqKeIHEuy87Q6wr","local":false},{"i":5,"t":"너는 복도 끝에 서서","a":"이고도","b":"kr_indie","e":2,"bpm":103,"lang":"ko","m":["차분","새벽"],"id":"3WgktU3Z6ouv9GnB2xkfh0","local":false},{"i":6,"t":"은하수","a":"COOING","b":"kr_indie","e":2,"bpm":98,"lang":"ko","m":["차분","새벽"],"id":"0TJnjAxpHbOgmNHh0xAzOt","local":false},{"i":7,"t":"말해줘","a":"HAAN, h3hyeon, JAEHA","b":"kr_hiphop","e":3,"bpm":101,"lang":"ko","m":["설렘","신남"],"id":"1RbHLhFCYpzkXvu2vLqEkP","local":false},{"i":8,"t":"이소은(LEE SO EUN) - 키친(Kitchen) 가사ㅣLyricㅣsmay","a":"(로컬 파일)","b":"old_ballad","e":2,"bpm":76,"lang":"ko","m":["차분","우울"],"id":"","local":true},{"i":9,"t":"Pain in the Dark 2026 LCK 결승전 오프닝 세리머니 테마곡 (Vocals by KiiiKiii Sui & Kya)","a":"(로컬 파일)","b":"game_ost","e":4,"bpm":132,"lang":"ko","m":["집중","운동"],"id":"","local":true},{"i":10,"t":"PewPew (feat. SHIRT)","a":"Goodmorning Pancake, SHIRT","b":"kr_hiphop","e":3,"bpm":107,"lang":"ko","m":["설렘","신남"],"id":"4ndoWUxaSTpa1nRKX2lACA","local":false},{"i":11,"t":"花も騒めく","a":"ヨルシカ","b":"jp_rock","e":3,"bpm":110,"lang":"ja","m":["설렘","집중"],"id":"5IqdmPAkcUVKrKgShlBKRR","local":false},{"i":12,"t":"개와 고양이의 시간","a":"조유리","b":"k_pop","e":4,"bpm":111,"lang":"ko","m":["신남","설렘"],"id":"2ZlzUxSV0Pir7oBn28OZCg","local":false},{"i":13,"t":"CAMELLIA","a":"COOING","b":"kr_indie","e":2,"bpm":105,"lang":"ko","m":["차분","새벽"],"id":"4lmmX7LkXbzyZb1bpL0Axz","local":false},{"i":14,"t":"다큐멘터리","a":"MRCH","b":"kr_indie","e":2,"bpm":100,"lang":"ko","m":["차분","새벽"],"id":"171mGT1HdxM2HdqZrWNY31","local":false},{"i":15,"t":"Sofie","a":"DORI","b":"kr_indie","e":2,"bpm":95,"lang":"ko","m":["차분","새벽"],"id":"4ZCWmjiUoUxL01D7M0iXoT","local":false},{"i":16,"t":"내일이 있잖아 (Feat. Jayci yucca(제이씨 유카))","a":"HAAN, Chan, Jayci yucca","b":"kr_hiphop","e":3,"bpm":98,"lang":"ko","m":["설렘","신남"],"id":"7yjWpSf5hZiI7gjz0jEKxk","local":false},{"i":17,"t":"IRIS OUT","a":"Kenshi Yonezu","b":"jp_rock","e":3,"bpm":106,"lang":"ja","m":["설렘","집중"],"id":"59hVbgr8rfYkDbHfr8RcGI","local":false},{"i":18,"t":"HAWATARI NIOKU CENTI [2-hundred-million-centimeter-long blades] - TV edit","a":"MAXIMUM THE HORMONE","b":"jp_rock","e":3,"bpm":173,"lang":"ja","m":["설렘","집중"],"id":"1lySGuhlcZUJxLA5W5Bo7k","local":false},{"i":19,"t":"JANE DOE","a":"Kenshi Yonezu, Hikaru Utada","b":"jp_rock","e":3,"bpm":96,"lang":"ja","m":["설렘","집중"],"id":"4oE7MyJhqSD3BaHRpNs8Nl","local":false},{"i":20,"t":"도쿄 (feat. 유라 (youra))","a":"기리보이, 유라","b":"kr_hiphop","e":3,"bpm":99,"lang":"ko","m":["설렘","신남"],"id":"13LzqEGhX8OeIWlDu9i2qE","local":false},{"i":21,"t":"HUNTING FOR YOUR DREAM","a":"GALNERYUS","b":"jp_rock","e":3,"bpm":162,"lang":"ja","m":["설렘","집중"],"id":"2wSBd0G5t1suEUn4xWM8Vh","local":false},{"i":22,"t":"휴먼 매커니즘","a":"MRCH","b":"kr_indie","e":2,"bpm":102,"lang":"ko","m":["차분","새벽"],"id":"1SIkPJSLem5qV4LGoIZglu","local":false},{"i":23,"t":"The Golden Land","a":"Evan Call","b":"game_ost","e":4,"bpm":125,"lang":"en","m":["집중","운동"],"id":"0VJwI3d3VaO2LsmOiz5Njc","local":false},{"i":24,"t":"Travel Again (Feat. Cautious Clay)","a":"빈지노, Cautious Clay","b":"kr_hiphop","e":3,"bpm":84,"lang":"en","m":["설렘","신남"],"id":"1bPMPSOQPIinoU6ZBDWtgb","local":false},{"i":25,"t":"노력","a":"최유리","b":"kr_indie","e":2,"bpm":87,"lang":"ko","m":["차분","새벽"],"id":"7yoqyzY2QCccmuaiUe0pvn","local":false},{"i":26,"t":"Violet","a":"DORI","b":"kr_indie","e":2,"bpm":103,"lang":"ko","m":["차분","새벽"],"id":"7L84lVh5grXqZqm89UO4fa","local":false},{"i":27,"t":"수수께끼","a":"알레프","b":"kr_indie","e":2,"bpm":98,"lang":"ko","m":["차분","새벽"],"id":"1Gfz78THnmr1q1gnZuWcDw","local":false},{"i":28,"t":"Hyouriittai","a":"YUZU","b":"jp_rock","e":3,"bpm":125,"lang":"ja","m":["설렘","집중"],"id":"0v1vufjir4OE4iRckLMoLd","local":false},{"i":29,"t":"술래잡기","a":"최유리","b":"kr_indie","e":1,"bpm":82,"lang":"ko","m":["차분","새벽"],"id":"6rHVDVq2yeM3JMwKvtYLXv","local":false},{"i":30,"t":"あぶく","a":"ヨルシカ","b":"jp_rock","e":3,"bpm":120,"lang":"ja","m":["설렘","집중"],"id":"59h6J25QnnT8xshPTFLkpe","local":false},{"i":31,"t":"사랑의 인사","a":"씨야","b":"old_ballad","e":2,"bpm":87,"lang":"ko","m":["차분","우울"],"id":"1Pce68TFZQz5NKfDOMR5eD","local":false},{"i":32,"t":"Heart on the table","a":"Milena","b":"kr_indie","e":2,"bpm":94,"lang":"ko","m":["차분","새벽"],"id":"4q8aUrWBIDUwqEy8uockob","local":false},{"i":33,"t":"Luina","a":"Agwi, Suyo","b":"kr_indie","e":2,"bpm":89,"lang":"ko","m":["차분","새벽"],"id":"4id961W4QcRsULlKs7Dy1x","local":false},{"i":34,"t":"이 사랑","a":"다비치","b":"old_ballad","e":2,"bpm":95,"lang":"ko","m":["차분","우울"],"id":"1mh5s6XJ3RLJBRPErACsHW","local":false},{"i":35,"t":"You Were Here, But Disappeared","a":"Bosudongcooler","b":"band_rock","e":4,"bpm":112,"lang":"ko","m":["신남","운동"],"id":"6VwdHi5cCPgPmR0C1yk1zF","local":false},{"i":36,"t":"Secret Codes","a":"Anthony Lazaro, rhyu","b":"jazz_lofi","e":1,"bpm":77,"lang":"en","m":["차분","새벽"],"id":"1BSvCKeSJFGkynbhQVWsqw","local":false},{"i":37,"t":"Winter I","a":"Dominik Luke Marsden Johnson, Tosini Parma","b":"jazz_lofi","e":1,"bpm":66,"lang":"en","m":["차분","새벽"],"id":"5Hx8vQBTFxD35h9Aal7Jmj","local":false},{"i":38,"t":"만찬가","a":"태연 (TAEYEON)","b":"k_pop","e":4,"bpm":102,"lang":"ko","m":["신남","설렘"],"id":"0KgetoSLg8qfJWIwoAQxBf","local":false},{"i":39,"t":"젖고있어","a":"빈지노","b":"kr_hiphop","e":3,"bpm":109,"lang":"ko","m":["설렘","신남"],"id":"6x64i1R4OdHFthZ9e3D7mq","local":false},{"i":40,"t":"What's On Your Mind? (Feat. UNE)","a":"HAAN, SHIRT, 으네 (UNE)","b":"kr_hiphop","e":3,"bpm":104,"lang":"ko","m":["설렘","신남"],"id":"5COkVzFpPDKxpVxAClg7WE","local":false},{"i":41,"t":"アポリア","a":"ヨルシカ","b":"jp_rock","e":3,"bpm":107,"lang":"ja","m":["설렘","집중"],"id":"7ugSlmtBWNMAgTpdvBPcIh","local":false},{"i":42,"t":"RUDE!","a":"Hearts2Hearts (하츠투하츠)","b":"k_pop","e":5,"bpm":120,"lang":"ko","m":["신남","설렘"],"id":"2bAQsNqdo62T8akkIvWzGl","local":false},{"i":43,"t":"Right Time","a":"Channel Bright","b":"kr_indie","e":2,"bpm":102,"lang":"ko","m":["차분","새벽"],"id":"1Eh7aVGBXp4av4dplOoZJ0","local":false},{"i":44,"t":"残機","a":"ZUTOMAYO","b":"jp_rock","e":3,"bpm":141,"lang":"ja","m":["설렘","집중"],"id":"1XeOqgzh2fZhmgxnmyiIJ8","local":false},{"i":45,"t":"Don't Look Back in Anger - Remastered","a":"Oasis","b":"west_pop","e":3,"bpm":148,"lang":"en","m":["신남","설렘"],"id":"0UvCh63URrLFcPkKt99hHd","local":false},{"i":46,"t":"Our Voyage","a":"QWER","b":"band_rock","e":4,"bpm":131,"lang":"ko","m":["신남","운동"],"id":"7Mgm9v9eYxrKZKR5S0AV5W","local":false},{"i":47,"t":"burner","a":"Chan","b":"kr_hiphop","e":4,"bpm":121,"lang":"ko","m":["설렘","신남"],"id":"6Ca78zNVlUw4TPJQFKgzVF","local":false},{"i":48,"t":"Can I Love ? (feat. youra, Meego)","a":"Cosmic Boy, Meego, 유라","b":"kr_hiphop","e":3,"bpm":106,"lang":"ko","m":["설렘","신남"],"id":"0Z8IT9sJWaGQb942lphBzY","local":false},{"i":49,"t":"일방통행 (Feat. 황세현)","a":"려진, h3hyeon","b":"kr_hiphop","e":3,"bpm":101,"lang":"ko","m":["설렘","신남"],"id":"6MmTxJOXZW3OKgQZ7a7nkn","local":false},{"i":50,"t":"ee","a":"이지카이트","b":"k_pop","e":4,"bpm":110,"lang":"ko","m":["신남","설렘"],"id":"7HngJwISsSqPVZsRJnm0CN","local":false},{"i":51,"t":"Leftover","a":"DORI","b":"kr_indie","e":2,"bpm":104,"lang":"ko","m":["차분","새벽"],"id":"03ThUjzSMT0P2brc6CnIaz","local":false},{"i":52,"t":"Counter Punch","a":"Shane, DORI, EID®echoesindream.","b":"kr_indie","e":2,"bpm":99,"lang":"ko","m":["차분","새벽"],"id":"4DgOE5sQzN44rVwudUoMJk","local":false},{"i":53,"t":"To Be Continued - KR Ver.","a":"QWER","b":"band_rock","e":4,"bpm":138,"lang":"ko","m":["신남","운동"],"id":"70yzpa4qHOigIPEf5ExtdL","local":false},{"i":54,"t":"날카롭냐하는데","a":"음성녹음","b":"kr_indie","e":2,"bpm":89,"lang":"ko","m":["차분","새벽"],"id":"4EQyWlJ2UhqfgHER01YcKE","local":false},{"i":55,"t":"allang mallang","a":"ZIN CHOI","b":"kr_indie","e":2,"bpm":105,"lang":"ko","m":["차분","새벽"],"id":"5i2NJDXiUvCdH8yDX9FQ6b","local":false},{"i":56,"t":"물음표 (Feat. 폴킴)","a":"YENA, 폴킴","b":"k_pop","e":4,"bpm":122,"lang":"ko","m":["신남","설렘"],"id":"1juxNlpwdGRJ2byuFW7RBC","local":false},{"i":57,"t":"祝福","a":"YOASOBI","b":"jp_rock","e":3,"bpm":131,"lang":"ja","m":["설렘","집중"],"id":"7ajpbW6tBpqUI9foCtwlLw","local":false},{"i":58,"t":"So Confident","a":"Henry Parsley, Devin Lea Moses","b":"west_pop","e":3,"bpm":106,"lang":"en","m":["신남","설렘"],"id":"59eslYG0q9caDh0iHCh1L2","local":false},{"i":59,"t":"인사 (Panorama)","a":"태연 (TAEYEON)","b":"k_pop","e":4,"bpm":102,"lang":"ko","m":["신남","설렘"],"id":"6aj9Cf3LDG3zehyw3qJyRu","local":false},{"i":60,"t":"茜","a":"ヨルシカ","b":"jp_rock","e":3,"bpm":117,"lang":"ja","m":["설렘","집중"],"id":"2TSJ1d6cLgHqrrCIRN3bn2","local":false},{"i":61,"t":"IDEAL","a":"Yeonjoo Kang","b":"kr_indie","e":2,"bpm":96,"lang":"ko","m":["차분","새벽"],"id":"0wIUoIIOagM5vHBEmTNpSG","local":false},{"i":62,"t":"미친 사랑의 노래","a":"씨야","b":"old_ballad","e":2,"bpm":79,"lang":"ko","m":["차분","우울"],"id":"2E0gg99GChIShwpSQyIPUm","local":false},{"i":63,"t":"OffCourse","a":"음성녹음","b":"kr_indie","e":2,"bpm":86,"lang":"ko","m":["차분","새벽"],"id":"3gwtdR9M1DpKn6Ejsfax5L","local":false},{"i":64,"t":"안녕 (Hello, Goodbye)","a":"YENA","b":"k_pop","e":3,"bpm":118,"lang":"ko","m":["신남","설렘"],"id":"74tKsdjzs3EnWEZHWca44M","local":false},{"i":65,"t":"낡은 구두","a":"YeonJeong","b":"kr_indie","e":2,"bpm":97,"lang":"ko","m":["차분","새벽"],"id":"5whU6iolMiqmME5JK3DQDf","local":false},{"i":66,"t":"364","a":"YENA","b":"k_pop","e":4,"bpm":114,"lang":"ko","m":["신남","설렘"],"id":"3RrpizHAdOwcD3fCVg5mg3","local":false},{"i":67,"t":"슈슈","a":"Shin In Ryu","b":"kr_indie","e":2,"bpm":87,"lang":"ko","m":["차분","새벽"],"id":"4nzUvhG8QH5iziREuhZ1CS","local":false},{"i":68,"t":"호수","a":"초승","b":"kr_indie","e":1,"bpm":97,"lang":"ko","m":["차분","새벽"],"id":"3V3JTs6XDdwMi4jCs8HCAz","local":false},{"i":69,"t":"Better left unsaid","a":"Milena","b":"kr_indie","e":2,"bpm":98,"lang":"ko","m":["차분","새벽"],"id":"5wSkrhbgnx58Z2zlj4w5b2","local":false},{"i":70,"t":"I Love You","a":"Lydia Ganada","b":"kr_indie","e":2,"bpm":93,"lang":"ko","m":["차분","새벽"],"id":"5brAAPMIfwnuFHnPsLtu5w","local":false},{"i":71,"t":"멜로 테라피","a":"DORI","b":"kr_indie","e":2,"bpm":88,"lang":"ko","m":["차분","새벽"],"id":"5SF2sk0yzIGy6NTc9yCE9p","local":false},{"i":72,"t":"Rules (Are Meant to Break)","a":"League of Legends, Che Lingo","b":"game_ost","e":4,"bpm":132,"lang":"en","m":["집중","운동"],"id":"37v8lUkYBx67uS1ruPPMeH","local":false},{"i":73,"t":"아쉬운 모양","a":"MRCH","b":"kr_indie","e":2,"bpm":99,"lang":"ko","m":["차분","새벽"],"id":"55TXaX8xLDRPUs8j3yIaR3","local":false},{"i":74,"t":"Her Name Was Summer","a":"Erøtic Wørms Exhibitiøn","b":"west_pop","e":3,"bpm":110,"lang":"en","m":["신남","설렘"],"id":"4esBGHdXZNDoHUyoeb3Ktr","local":false},{"i":75,"t":"4 in 6 out","a":"COOING","b":"kr_indie","e":2,"bpm":89,"lang":"ko","m":["차분","새벽"],"id":"2ZiKfJVxuri1OLG8xfpPVv","local":false},{"i":76,"t":"ルバート","a":"ヨルシカ","b":"jp_rock","e":3,"bpm":121,"lang":"ja","m":["설렘","집중"],"id":"1w3837OMA0xxpFqqMtL7B5","local":false},{"i":77,"t":"게임 오버 ?","a":"HANRORO","b":"kr_indie","e":2,"bpm":100,"lang":"ko","m":["차분","새벽"],"id":"3Ce7m66BjXf97IDrvUVGbP","local":false},{"i":78,"t":"야, 잠깐만! (Feat. 황세현(h3hyeon))","a":"HAAN, Chan, h3hyeon","b":"kr_hiphop","e":3,"bpm":103,"lang":"ko","m":["설렘","신남"],"id":"30kEjqFheQPomQcf2kZM7H","local":false},{"i":79,"t":"What A Man Gotta Do","a":"Jonas Brothers","b":"west_pop","e":3,"bpm":106,"lang":"en","m":["신남","설렘"],"id":"4wNIkl5XGiAACjFBlDWuSd","local":false},{"i":80,"t":"746","a":"최유리","b":"kr_indie","e":2,"bpm":106,"lang":"ko","m":["차분","새벽"],"id":"6GPpcZv3AyOGx0nSBtqcGu","local":false},{"i":81,"t":"ADVG (Feat. Sunny Shin)","a":"HAAN, SHIRT, Sunny Shin","b":"kr_hiphop","e":3,"bpm":109,"lang":"ko","m":["설렘","신남"],"id":"17iF8I6QolYXGgvLWK741m","local":false},{"i":82,"t":"Sin","a":"Agwi, Suyo","b":"kr_indie","e":2,"bpm":96,"lang":"ko","m":["차분","새벽"],"id":"46Sj7PwZMv2wpAU4aMEz1R","local":false},{"i":83,"t":"Train lane","a":"Agwi, Suyo","b":"kr_indie","e":2,"bpm":91,"lang":"ko","m":["차분","새벽"],"id":"24i76WqmGRR13vHR0nrZlQ","local":false},{"i":84,"t":"Nakama to Iukoto.","a":"Yoshihisa Hirano","b":"jp_rock","e":3,"bpm":118,"lang":"ja","m":["설렘","집중"],"id":"5fn2YREOCRDg0x6b0fFiNi","local":false},{"i":85,"t":"One Love","a":"러브홀릭","b":"old_ballad","e":2,"bpm":102,"lang":"ko","m":["차분","우울"],"id":"2bCyX97ruDhYb2WccRw8Ry","local":false},{"i":86,"t":"놀러 와","a":"러브홀릭","b":"old_ballad","e":2,"bpm":97,"lang":"ko","m":["차분","우울"],"id":"6CfFQPJmvOtzwbvWqKESPS","local":false},{"i":87,"t":"オリオン","a":"YOASOBI","b":"jp_rock","e":3,"bpm":128,"lang":"ja","m":["설렘","집중"],"id":"6VpeCZDyuFJD3HW5bwEc8Z","local":false},{"i":88,"t":"이 여름 SUMMER","a":"Cool","b":"old_ballad","e":2,"bpm":111,"lang":"ko","m":["차분","우울"],"id":"5u8cdw0S4v8SxskIgIM7Cn","local":false},{"i":89,"t":"소년만화","a":"QWER","b":"band_rock","e":4,"bpm":147,"lang":"ko","m":["신남","운동"],"id":"6YzvWpNuH9s3pwj2obESJn","local":false},{"i":90,"t":"Little bird! Little bird! Little bird!","a":"이고도","b":"kr_indie","e":2,"bpm":98,"lang":"ko","m":["차분","새벽"],"id":"1x7BZHu3v1hD81MHE1Vrzw","local":false},{"i":91,"t":"여름의 속도","a":"윈터 (WINTER)","b":"kr_indie","e":2,"bpm":93,"lang":"ko","m":["차분","새벽"],"id":"3Aljxc4MlI98oUcPJrBwUD","local":false},{"i":92,"t":"Deja Vu","a":"RESCENE","b":"k_pop","e":4,"bpm":118,"lang":"ko","m":["신남","설렘"],"id":"1pBUzZE9PoKLoPxo6QxsG6","local":false},{"i":93,"t":"Victory Lap Five","a":"Fred again.., Skepta, PlaqueBoyMax, Denzel Curry, Hanumankind, That Mexican OT, D Double E, LYNY","b":"west_pop","e":4,"bpm":136,"lang":"en","m":["신남","설렘"],"id":"7p6lz0cjRukXzHxOopaBZj","local":false},{"i":94,"t":"night letter","a":"Hoonnie","b":"kr_indie","e":1,"bpm":93,"lang":"ko","m":["차분","새벽"],"id":"7aIF9y14UfQYMzLy1yn2gG","local":false},{"i":95,"t":"Knife","a":"이고도","b":"kr_indie","e":2,"bpm":94,"lang":"ko","m":["차분","새벽"],"id":"0UYcMcJXEFhM0m04i8LIC6","local":false},{"i":96,"t":"BANG BANG","a":"IVE","b":"k_pop","e":5,"bpm":121,"lang":"ko","m":["신남","설렘"],"id":"5Mm6tCipllD4mCnDKv7hjX","local":false},{"i":97,"t":"Strategy","a":"Olivia Marsh","b":"west_pop","e":3,"bpm":121,"lang":"en","m":["신남","설렘"],"id":"1ytt3Z0vxad4plyvFuBeRr","local":false},{"i":98,"t":"HOTLINE","a":"Mikayla Geier","b":"west_pop","e":4,"bpm":126,"lang":"en","m":["신남","설렘"],"id":"2Am4WNCZJk67cCTGnmQz1U","local":false},{"i":99,"t":"STYLE","a":"Hearts2Hearts (하츠투하츠)","b":"k_pop","e":4,"bpm":129,"lang":"ko","m":["신남","설렘"],"id":"5EoV2HmAlkqN1XvsIjOBZZ","local":false},{"i":100,"t":"소문의 낙원","a":"AKMU","b":"k_pop","e":4,"bpm":112,"lang":"ko","m":["신남","설렘"],"id":"5dxiriLgC9mu2FbSNqudld","local":false},{"i":101,"t":"check","a":"bbno$","b":"west_pop","e":3,"bpm":122,"lang":"en","m":["신남","설렘"],"id":"1QYnPmUTrtk3Ahk1H1vFR1","local":false},{"i":102,"t":"시차 (We Are)","a":"우원재, 로꼬, GRAY","b":"kr_hiphop","e":3,"bpm":109,"lang":"ko","m":["설렘","신남"],"id":"2SMq0lOqCTHayWa9juoI0d","local":false},{"i":103,"t":"distance","a":"bixby","b":"kr_indie","e":2,"bpm":96,"lang":"ko","m":["차분","새벽"],"id":"2stuYeS9icwoQf79tUmnv8","local":false},{"i":104,"t":"FOCUS","a":"Hearts2Hearts (하츠투하츠)","b":"k_pop","e":4,"bpm":125,"lang":"ko","m":["신남","설렘"],"id":"6jYiHr12NVKLzn0X7K8aSK","local":false},{"i":105,"t":"바니바니","a":"QWER","b":"band_rock","e":4,"bpm":130,"lang":"ko","m":["신남","운동"],"id":"3AqAzRNJL6smOAhfaL9UNG","local":false},{"i":106,"t":"around","a":"Kyurin","b":"kr_indie","e":2,"bpm":102,"lang":"ko","m":["차분","새벽"],"id":"6EiWrGdDSlMLfYad6wpl2Q","local":false},{"i":107,"t":"파랑의 히로인","a":"김마리","b":"kr_indie","e":2,"bpm":97,"lang":"ko","m":["차분","새벽"],"id":"6CKCScNDppsarIuvfkVDGB","local":false},{"i":108,"t":"RULE (feat. 헤이즈)","a":"CHUU, 헤이즈","b":"k_pop","e":4,"bpm":114,"lang":"ko","m":["신남","설렘"],"id":"29orq8DEeVBJr0f9KWncuJ","local":false},{"i":109,"t":"One Touch","a":"Olivia Marsh","b":"west_pop","e":3,"bpm":103,"lang":"en","m":["신남","설렘"],"id":"1ekHPLoIbKSbsOPKEaUymb","local":false},{"i":110,"t":"Plate","a":"이고도","b":"kr_indie","e":2,"bpm":103,"lang":"ko","m":["차분","새벽"],"id":"0XeguhePUFakKJZtDYeZL3","local":false},{"i":111,"t":"Melatonin","a":"jomm, readyaimfire27","b":"kr_hiphop","e":3,"bpm":106,"lang":"ko","m":["설렘","신남"],"id":"24Dl2hfEkqdEq6QCooE2Z8","local":false},{"i":112,"t":"LEMONADE","a":"aespa","b":"k_pop","e":4,"bpm":127,"lang":"ko","m":["신남","설렘"],"id":"6vjt2smGK75oc9r2OGFfgp","local":false},{"i":113,"t":"안녕 나의 사랑","a":"성시경","b":"old_ballad","e":1,"bpm":64,"lang":"ko","m":["차분","우울"],"id":"3G9YgQSKoieLv7UwoDKFAl","local":false},{"i":114,"t":"Victory Lap","a":"Fred again.., Skepta, PlaqueBoyMax","b":"west_pop","e":4,"bpm":136,"lang":"en","m":["신남","설렘"],"id":"1lbNgoJ5iMrMluCyhI4OQP","local":false},{"i":115,"t":"연애특강 (FEAT. 한예슬)","a":"Mighty Mouth, Han Ye Seul","b":"kr_hiphop","e":3,"bpm":107,"lang":"ko","m":["설렘","신남"],"id":"2vu0gIbtabp50KJq3hw9bu","local":false},{"i":116,"t":"꽃의 바램 (Feat. Hebi.) - 영혼의 꽃 액트 2 PV","a":"(로컬 파일)","b":"game_ost","e":4,"bpm":122,"lang":"ko","m":["집중","운동"],"id":"","local":true},{"i":117,"t":"Tied","a":"COOING","b":"kr_indie","e":2,"bpm":89,"lang":"ko","m":["차분","새벽"],"id":"6hw689zbjD67Fz6sB29eFm","local":false},{"i":118,"t":"Tokyo Love (Feat. 버벌진트)","a":"런치, 버벌진트","b":"kr_hiphop","e":3,"bpm":113,"lang":"ko","m":["설렘","신남"],"id":"0sGFEEuUhDGDyxwvrBLNMM","local":false},{"i":119,"t":"Long Distance","a":"COOING","b":"kr_indie","e":2,"bpm":100,"lang":"ko","m":["차분","새벽"],"id":"32goTxdU5v3kFV990PQFVM","local":false},{"i":120,"t":"Delulu","a":"KiiiKiii","b":"k_pop","e":4,"bpm":127,"lang":"ko","m":["신남","설렘"],"id":"5KCIrYoBUmQbW2FBoOL4Q0","local":false},{"i":121,"t":"\"L\"","a":"The Volunteers","b":"band_rock","e":4,"bpm":98,"lang":"ko","m":["신남","운동"],"id":"6bnM3mthxSY6fWrk15msxM","local":false},{"i":122,"t":"SECRET (feat. Raf Sandou)","a":"DIMO REX, Raf Sandou","b":"kr_hiphop","e":3,"bpm":114,"lang":"ko","m":["설렘","신남"],"id":"0g7lx8BVxUjmUwu6k6gTl8","local":false},{"i":123,"t":"Shine for Me","a":"drewboi, h3hyeon","b":"kr_hiphop","e":3,"bpm":109,"lang":"ko","m":["설렘","신남"],"id":"3VyVciuGP1T9UJUffO64QJ","local":false},{"i":124,"t":"KPOPSTAR","a":"장한나","b":"k_pop","e":4,"bpm":118,"lang":"ko","m":["신남","설렘"],"id":"4LcSsr9uPx6kkloIJo6N1Q","local":false},{"i":125,"t":"앵콜 (Feat. gyun)","a":"h3hyeon, gyun","b":"kr_hiphop","e":3,"bpm":99,"lang":"ko","m":["설렘","신남"],"id":"1JBMIxUx1Crja2qOOQ4tMj","local":false},{"i":126,"t":"Sugar Honey Iced Tea (Remastered)","a":"장한나","b":"k_pop","e":4,"bpm":108,"lang":"ko","m":["신남","설렘"],"id":"1LoyjhgSOMdTJR18WfMO5n","local":false},{"i":127,"t":"hayley","a":"hathaw9y","b":"kr_indie","e":2,"bpm":102,"lang":"ko","m":["차분","새벽"],"id":"5mCuTWKVuBxTP6gizaNS2Y","local":false},{"i":128,"t":"I Got You","a":"SRA","b":"kr_indie","e":2,"bpm":97,"lang":"ko","m":["차분","새벽"],"id":"1ixVdM8tUsF5edhIiyKvPI","local":false},{"i":129,"t":"Routine","a":"Yeonjoo Kang","b":"kr_indie","e":2,"bpm":92,"lang":"ko","m":["차분","새벽"],"id":"7zdu0WoPwwHTncz0R4w4Wq","local":false},{"i":130,"t":"Stars with the Pain","a":"COOING","b":"kr_indie","e":2,"bpm":87,"lang":"ko","m":["차분","새벽"],"id":"3cDpYJIHrRMw7tupUt66g6","local":false},{"i":131,"t":"우와!!!","a":"COOING","b":"kr_indie","e":2,"bpm":103,"lang":"ko","m":["차분","새벽"],"id":"4aobP5mTaQFRy9V74YeWtd","local":false},{"i":132,"t":"Serenade (KARINA & WINTER)","a":"aespa","b":"k_pop","e":4,"bpm":132,"lang":"ko","m":["신남","설렘"],"id":"2h81piRbzIJmjpxR4qnM2o","local":false},{"i":133,"t":"아슬하게 (Feat. 한로로)","a":"구원찬, HANRORO","b":"kr_hiphop","e":3,"bpm":101,"lang":"ko","m":["설렘","신남"],"id":"0xRxPl9X1k8o6tAi69uXLo","local":false},{"i":134,"t":"보물섬 (Treasure Island) (feat. Brody (브로디))","a":"Yein, Brody","b":"kr_hiphop","e":3,"bpm":96,"lang":"ko","m":["설렘","신남"],"id":"12dmpmazEB4uORmJzzhoue","local":false},{"i":135,"t":"DUET","a":"지코, Lilas","b":"kr_hiphop","e":3,"bpm":112,"lang":"ko","m":["설렘","신남"],"id":"0M4O6UEu4F9SxImTsBuX9n","local":false},{"i":136,"t":"404 (New Era)","a":"KiiiKiii","b":"k_pop","e":4,"bpm":131,"lang":"ko","m":["신남","설렘"],"id":"1rEa59P5yEal5cp1h7kl2e","local":false},{"i":137,"t":"Why's this dealer?","a":"Niko B","b":"west_pop","e":3,"bpm":110,"lang":"en","m":["신남","설렘"],"id":"6RvLWcPTuaKfq11vi9csOK","local":false},{"i":138,"t":"Ain't Good","a":"siso, ALICE U","b":"kr_hiphop","e":3,"bpm":97,"lang":"ko","m":["설렘","신남"],"id":"7FVPqMlNjyhp6J91NlDtvI","local":false},{"i":139,"t":"텐텐","a":"MRCH","b":"kr_indie","e":2,"bpm":105,"lang":"ko","m":["차분","새벽"],"id":"3dojDpVyYZ5cta8wLWOKOm","local":false},{"i":140,"t":"수고했어 봄 (feat. siso(시소))","a":"매드클라운, siso","b":"kr_hiphop","e":3,"bpm":108,"lang":"ko","m":["설렘","신남"],"id":"7ee9hq0KZKDBciPX9o7vJG","local":false},{"i":141,"t":"Night Train","a":"Milena","b":"kr_indie","e":1,"bpm":89,"lang":"ko","m":["차분","새벽"],"id":"7FT7a5DV7Mk6Mc9ZRJnX70","local":false},{"i":142,"t":"피어나","a":"초승","b":"kr_indie","e":2,"bpm":90,"lang":"ko","m":["차분","새벽"],"id":"0Gz0JZ8ICbS254LJfBwvFx","local":false},{"i":143,"t":"척(Chuck)","a":"진솔","b":"kr_indie","e":2,"bpm":106,"lang":"ko","m":["차분","새벽"],"id":"3mF8QC6nmSvJYzwYzBJmGN","local":false},{"i":144,"t":"Who is she","a":"KISS OF LIFE","b":"k_pop","e":4,"bpm":129,"lang":"ko","m":["신남","설렘"],"id":"16iOs2f9G9qRknDgM9cfAw","local":false},{"i":145,"t":"R.E.M","a":"KISS OF LIFE","b":"k_pop","e":4,"bpm":124,"lang":"ko","m":["신남","설렘"],"id":"0RbfBh91M6Xh1OL1ZUJYF1","local":false},{"i":146,"t":"물끄러미","a":"지아","b":"kr_indie","e":2,"bpm":91,"lang":"ko","m":["차분","새벽"],"id":"5t2qlg7EG7qmckTk6usRee","local":false},{"i":147,"t":"Phrygian House Etude","a":"Leon T.","b":"kr_indie","e":2,"bpm":86,"lang":"ko","m":["차분","새벽"],"id":"5P4BcmViCCkUwkSGQ6tQui","local":false},{"i":148,"t":"Long Island","a":"로시","b":"kr_indie","e":2,"bpm":102,"lang":"ko","m":["차분","새벽"],"id":"3Cjh1av2Pr42TlDq7nZ7b6","local":false},{"i":149,"t":"Party Up","a":"DMX","b":"west_pop","e":4,"bpm":123,"lang":"en","m":["신남","설렘"],"id":"0LWkaEyQRkF0XAms8Bg1fC","local":false},{"i":150,"t":"No.1 Fangirl","a":"JiJi, jomm","b":"kr_indie","e":2,"bpm":92,"lang":"ko","m":["차분","새벽"],"id":"0OLEy9EOsitgHxMivJtODJ","local":false},{"i":151,"t":"퇴사할게여 (Narr. 기안84)","a":"소연","b":"old_ballad","e":2,"bpm":75,"lang":"ko","m":["차분","우울"],"id":"5kaHfldTiM58rL3yOpBqfO","local":false},{"i":152,"t":"그런 날","a":"윈터 (WINTER)","b":"kr_indie","e":1,"bpm":97,"lang":"ko","m":["차분","새벽"],"id":"59RLYQQ8v9PItVwFf1qNhx","local":false},{"i":153,"t":"늘","a":"러브홀릭","b":"old_ballad","e":2,"bpm":98,"lang":"ko","m":["차분","우울"],"id":"3FyNFiBalCapTZRP04wg7o","local":false},{"i":154,"t":"BLACKHOLE","a":"IVE","b":"k_pop","e":4,"bpm":125,"lang":"ko","m":["신남","설렘"],"id":"0MtiWniV24IBXmBPeW1v1m","local":false},{"i":155,"t":"Bartender","a":"장한나","b":"k_pop","e":4,"bpm":110,"lang":"ko","m":["신남","설렘"],"id":"2kTRIOpYc8m0t1t7L0lDCe","local":false},{"i":156,"t":"All in Your Head","a":"SCENE, SEON","b":"kr_indie","e":2,"bpm":104,"lang":"ko","m":["차분","새벽"],"id":"368WzQIqf6KpwQ6RNNb0yG","local":false},{"i":157,"t":"Surfin' Boy","a":"Red Velvet (레드벨벳)","b":"k_pop","e":4,"bpm":121,"lang":"ko","m":["신남","설렘"],"id":"0cSxfNcy80a18linDTEpiN","local":false},{"i":158,"t":"비행소녀","a":"MRCH","b":"kr_indie","e":1,"bpm":88,"lang":"ko","m":["차분","새벽"],"id":"2zlomsloioUxZyVi0SfA8R","local":false},{"i":159,"t":"SLOWLY (Feat. g0nny)","a":"DAUL, Noair, plan8, CHANNEL 201, g0nny","b":"kr_hiphop","e":3,"bpm":97,"lang":"ko","m":["설렘","신남"],"id":"2RAMFRLHUFiTXywPA7yq6w","local":false},{"i":160,"t":"on the spot","a":"SUNNA","b":"kr_indie","e":2,"bpm":105,"lang":"ko","m":["차분","새벽"],"id":"0nrZ4xkac3S4fLPRjs4JcW","local":false},{"i":161,"t":"Downtown","a":"MIO","b":"kr_indie","e":2,"bpm":100,"lang":"ko","m":["차분","새벽"],"id":"5hgEj04DwuzW3jrMRb22iH","local":false},{"i":162,"t":"EURO","a":"SUNNA","b":"kr_indie","e":2,"bpm":95,"lang":"ko","m":["차분","새벽"],"id":"2ClrlOChmZd8bM2j3ckdOL","local":false},{"i":163,"t":"Your Plan (feat. Paloalto)","a":"JUE, 팔로알토","b":"kr_hiphop","e":3,"bpm":98,"lang":"ko","m":["설렘","신남"],"id":"1dBjp17ylpBJORpIHsQJw5","local":false},{"i":164,"t":"Reality","a":"Vladimir Cosma, Richard Sanderson","b":"jazz_lofi","e":1,"bpm":88,"lang":"en","m":["차분","새벽"],"id":"1gci2QBGH5nzPWePv6ATom","local":false},{"i":165,"t":"SUGAR HONEY ICE TEA","a":"BABYMONSTER","b":"k_pop","e":4,"bpm":139,"lang":"ko","m":["신남","설렘"],"id":"16ck09A3j0tqvV6t3fW1DD","local":false},{"i":166,"t":"Sealed With A Kiss","a":"Brian Hyland","b":"jazz_lofi","e":1,"bpm":78,"lang":"en","m":["차분","새벽"],"id":"6oM4ryXpuZmbFfBv2sEe7v","local":false},{"i":167,"t":"You've Got a Friend in Me","a":"Randy Newman","b":"jazz_lofi","e":1,"bpm":73,"lang":"en","m":["차분","새벽"],"id":"2stkLJ0JNcXkIRDNF3ld6c","local":false},{"i":168,"t":"tattoo","a":"siso","b":"kr_indie","e":2,"bpm":86,"lang":"ko","m":["차분","새벽"],"id":"33WBYN7exjWniyuLnd8qgl","local":false},{"i":169,"t":"Friends In Bed","a":"검정치마","b":"kr_indie","e":2,"bpm":102,"lang":"ko","m":["차분","새벽"],"id":"0LqczlbXLcy8ddF6G4BnqO","local":false},{"i":170,"t":"미장센","a":"에픽하이, 다비치","b":"kr_hiphop","e":3,"bpm":87,"lang":"ko","m":["설렘","신남"],"id":"0wIwrT28ZIAHdJsTgKhAt9","local":false},{"i":171,"t":"Alphabet","a":"로시","b":"kr_indie","e":2,"bpm":92,"lang":"ko","m":["차분","새벽"],"id":"7iAJf4LATO0O3dJizZEm2g","local":false},{"i":172,"t":"Sweetest","a":"로시","b":"kr_indie","e":2,"bpm":87,"lang":"ko","m":["차분","새벽"],"id":"2Z4WJ6lFttemi3TIpSZ4rB","local":false},{"i":173,"t":"First Train","a":"로시","b":"kr_indie","e":2,"bpm":103,"lang":"ko","m":["차분","새벽"],"id":"44nmEveoY62sjzWNCescZS","local":false},{"i":174,"t":"Fresh Air","a":"로시, Chan, LOGOS","b":"kr_hiphop","e":3,"bpm":106,"lang":"ko","m":["설렘","신남"],"id":"42Obs08BqmPN316TLEgIGN","local":false},{"i":175,"t":"Really","a":"로시","b":"kr_indie","e":2,"bpm":93,"lang":"ko","m":["차분","새벽"],"id":"4R2bmIc2mFhANCFsQbXPGS","local":false},{"i":176,"t":"Something Casual","a":"로시","b":"kr_indie","e":2,"bpm":88,"lang":"ko","m":["차분","새벽"],"id":"1eqzWjF4C3upoquBmoLnwh","local":false},{"i":177,"t":"미리 좀 말해주지 그랬어 (ENFP) (아는 여자애 X 로시 (Rothy))","a":"로시","b":"kr_indie","e":2,"bpm":104,"lang":"ko","m":["차분","새벽"],"id":"2LOQrKkK5hZckZZAIzmP88","local":false},{"i":178,"t":"咲き誇れ","a":"YOASOBI","b":"jp_rock","e":3,"bpm":135,"lang":"ja","m":["설렘","집중"],"id":"2t5C9K8bQMCHXG0zdXRI12","local":false},{"i":179,"t":"NEON","a":"A2O LITE, A2O","b":"kr_indie","e":2,"bpm":94,"lang":"ko","m":["차분","새벽"],"id":"5PvLNQRNRj61y3CU4SFIY4","local":false},{"i":180,"t":"Vennus","a":"HollowFate, VAYAH, BLVNK","b":"kr_indie","e":2,"bpm":89,"lang":"ko","m":["차분","새벽"],"id":"72Ce3ogkPzCzbFLxLvtwQO","local":false},{"i":181,"t":"Wait! (feat. Chan)","a":"Chilloop, Chan","b":"kr_hiphop","e":3,"bpm":113,"lang":"ko","m":["설렘","신남"],"id":"7BsKaPQU37bbS7ZbmimAvZ","local":false},{"i":182,"t":"너랑 나는 (Feat.SHIRT)","a":"주은, SHIRT","b":"kr_hiphop","e":3,"bpm":108,"lang":"ko","m":["설렘","신남"],"id":"5FugGTLvAubPqpFZA6eBSm","local":false},{"i":183,"t":"내 신발 좀 봐!","a":"Chan, SHIRT","b":"kr_hiphop","e":3,"bpm":103,"lang":"ko","m":["설렘","신남"],"id":"6C0vwVXBfCTI3Ar1Eo7suc","local":false},{"i":184,"t":"lulu.","a":"Mrs. GREEN APPLE","b":"jp_rock","e":3,"bpm":130,"lang":"ja","m":["설렘","집중"],"id":"6RWQ0enEtrtUE0zVNdpUcw","local":false},{"i":185,"t":"Brand New","a":"Mrs. GREEN APPLE","b":"jp_rock","e":3,"bpm":146,"lang":"ja","m":["설렘","집중"],"id":"2kcc5rt7nTT99Rjr7BBVP5","local":false},{"i":186,"t":"エピソード","a":"Mrs. GREEN APPLE","b":"jp_rock","e":3,"bpm":141,"lang":"ja","m":["설렘","집중"],"id":"4xHW17qjig42xvoNlgCRVc","local":false},{"i":187,"t":"Leave It All Behind","a":"Raevoz","b":"kr_indie","e":2,"bpm":96,"lang":"ko","m":["차분","새벽"],"id":"5hjIyToEhDxusL35frS372","local":false},{"i":188,"t":"전하고 싶은 말은","a":"YeonJeong","b":"kr_indie","e":2,"bpm":91,"lang":"ko","m":["차분","새벽"],"id":"65zaYJqu1O5zNiAG0kLGwC","local":false},{"i":189,"t":"dance partner","a":"asumuh","b":"kr_indie","e":2,"bpm":86,"lang":"ko","m":["차분","새벽"],"id":"6pERLwGg6WN0MvQ7YujWsG","local":false},{"i":190,"t":"낙하","a":"찬민","b":"kr_indie","e":2,"bpm":102,"lang":"ko","m":["차분","새벽"],"id":"67mNsloLtulun2pLmuh42B","local":false},{"i":191,"t":"도레미파솔라시도 (Vocal. 채령 (ITZY))","a":"이찬혁비디오, CHAERYEONG","b":"kr_indie","e":2,"bpm":97,"lang":"ko","m":["차분","새벽"],"id":"5YIq0tkdh2zFCT5vCTGz0U","local":false},{"i":192,"t":"숨길 수 없어요","a":"Rollercoaster","b":"band_rock","e":4,"bpm":108,"lang":"ko","m":["신남","운동"],"id":"5J7imVb41hWNGHghIb0kcH","local":false},{"i":193,"t":"도약","a":"최유리","b":"kr_indie","e":2,"bpm":87,"lang":"ko","m":["차분","새벽"],"id":"526xU4wqaL2vOpWPbsMNm3","local":false},{"i":194,"t":"첫눈에","a":"헤이즈","b":"k_pop","e":3,"bpm":119,"lang":"ko","m":["신남","설렘"],"id":"2g76vE59gdow7ynPQdzuaw","local":false},{"i":195,"t":"City to City","a":"Ashley Alisha","b":"jazz_lofi","e":1,"bpm":80,"lang":"en","m":["차분","새벽"],"id":"33IpUfGqmtI2A1zdJxu8PS","local":false},{"i":196,"t":"WILL","a":"aiai, homs","b":"kr_hiphop","e":3,"bpm":101,"lang":"ko","m":["설렘","신남"],"id":"62lzqHzP5o4LQ2Aw7e5TTt","local":false},{"i":197,"t":"Promise","a":"JUNNY","b":"kr_hiphop","e":3,"bpm":96,"lang":"ko","m":["설렘","신남"],"id":"79cmYpry5DEPtK4KbmAUqj","local":false},{"i":198,"t":"왜, 왜, 왜","a":"SUMIN, Slom","b":"kr_hiphop","e":3,"bpm":112,"lang":"ko","m":["설렘","신남"],"id":"0k46RHQDiZrP8eDgY4bd3v","local":false},{"i":199,"t":"烏 - Raven","a":"Kenshi Yonezu","b":"jp_rock","e":3,"bpm":99,"lang":"ja","m":["설렘","집중"],"id":"5Ij88F5dK7yib1RoNA8wGV","local":false},{"i":200,"t":"Far","a":"aiai","b":"kr_indie","e":2,"bpm":94,"lang":"ko","m":["차분","새벽"],"id":"2gcTvmc2C12fIUDfMujsnU","local":false},{"i":201,"t":"가면무도회 (Feat. Mabinc, matter)","a":"SUDI, Mabinc, matter","b":"kr_hiphop","e":3,"bpm":97,"lang":"ko","m":["설렘","신남"],"id":"6DHRVSZ7pwymYPscCUlDg4","local":false},{"i":202,"t":"Baby Cat (Feat. Qim Isle)","a":"Summer Soul, Qim Isle","b":"kr_hiphop","e":3,"bpm":113,"lang":"ko","m":["설렘","신남"],"id":"0NCwPwdrCymcGGciPNT9jp","local":false},{"i":203,"t":"You’re Under Arrest","a":"ILLIT","b":"k_pop","e":4,"bpm":130,"lang":"ko","m":["신남","설렘"],"id":"0pMoUGdpD8nupNP1mSdZUn","local":false},{"i":204,"t":"콜렉트콜 개러지","a":"Tomatomat","b":"kr_indie","e":2,"bpm":95,"lang":"ko","m":["차분","새벽"],"id":"5c3CeVY1p8XS4JBKxA5lbN","local":false},{"i":205,"t":"New me","a":"YOASOBI","b":"jp_rock","e":3,"bpm":126,"lang":"ja","m":["설렘","집중"],"id":"3cHIeZTJe2QSvypOSDZsom","local":false},{"i":206,"t":"기억상실","a":"거미","b":"old_ballad","e":1,"bpm":88,"lang":"ko","m":["차분","우울"],"id":"0tCZ6PZXTa25Fidj0DnYzJ","local":false},{"i":207,"t":"劇上","a":"YOASOBI","b":"jp_rock","e":3,"bpm":137,"lang":"ja","m":["설렘","집중"],"id":"1wqT6wA3RRyo0DVajcpy7F","local":false},{"i":208,"t":"プロポーズ","a":"natori","b":"jp_rock","e":3,"bpm":104,"lang":"ja","m":["설렘","집중"],"id":"2BcQfb9SfauDQdeXHTfLsT","local":false},{"i":209,"t":"セレナーデ","a":"natori","b":"jp_rock","e":3,"bpm":99,"lang":"ja","m":["설렘","집중"],"id":"5jvk045Ry7OX5BhPKfzHSJ","local":false},{"i":210,"t":"경도 (feat. Leellamarz)","a":"1DAY, Urban Fisher, Leellamarz","b":"kr_hiphop","e":3,"bpm":94,"lang":"ko","m":["설렘","신남"],"id":"1YpffxDQFy5jpsbW6lqB6l","local":false},{"i":211,"t":"Heart Drop","a":"RESCENE","b":"k_pop","e":4,"bpm":132,"lang":"ko","m":["신남","설렘"],"id":"4lihmuAwCau08DRXHOCthl","local":false},{"i":212,"t":"세상은 영화 같지 않더라","a":"H1-KEY","b":"k_pop","e":4,"bpm":119,"lang":"ko","m":["신남","설렘"],"id":"1jcg5d5YaYJinVeU5mtR3C","local":false},{"i":213,"t":"W.House","a":"KISS OF LIFE","b":"k_pop","e":4,"bpm":120,"lang":"ko","m":["신남","설렘"],"id":"1UDsA7aAZBK5vNCGnmX4CT","local":false},{"i":214,"t":"CINEMA","a":"찬민","b":"kr_indie","e":2,"bpm":87,"lang":"ko","m":["차분","새벽"],"id":"3RrpizHAdOwcD3fCVg5mg300","local":false},{"i":215,"t":"Hotel Room","a":"Ax and the Hatchetmen","b":"west_pop","e":4,"bpm":129,"lang":"en","m":["신남","설렘"],"id":"6DKSK32WwzBMZ0qAq28Zon","local":false},{"i":216,"t":"もう少しだけ","a":"YOASOBI","b":"jp_rock","e":3,"bpm":134,"lang":"ja","m":["설렘","집중"],"id":"7zUgvDcQgn1TPEQHOsQo6y","local":false},{"i":217,"t":"Just the Two of Us","a":"Soo Yeony","b":"west_pop","e":3,"bpm":109,"lang":"en","m":["신남","설렘"],"id":"16b63oOBc5rF4e88vOA8Vm","local":false},{"i":218,"t":"oh baby","a":"hartts","b":"kr_indie","e":2,"bpm":88,"lang":"ko","m":["차분","새벽"],"id":"7ozyJ6FKSRR609kBEGNcrd","local":false},{"i":219,"t":"セブンティーン","a":"YOASOBI","b":"jp_rock","e":3,"bpm":140,"lang":"ja","m":["설렘","집중"],"id":"62q2gPY4OnQCGnw7T4JWg1","local":false},{"i":220,"t":"내 마음 히아신스","a":"우예린","b":"kr_indie","e":2,"bpm":99,"lang":"ko","m":["차분","새벽"],"id":"0mu4X4v54M4qz1ZRdOIthl","local":false},{"i":221,"t":"Let Me Be Your Sea","a":"H1-KEY","b":"k_pop","e":4,"bpm":116,"lang":"ko","m":["신남","설렘"],"id":"5ovEBpKRTo7HpWXNNzBJda","local":false},{"i":222,"t":"Machu Picchu","a":"Erøtic Wørms Exhibitiøn","b":"west_pop","e":3,"bpm":105,"lang":"en","m":["신남","설렘"],"id":"3MN6tIVocnyaGbhQe64LbT","local":false},{"i":223,"t":"With","a":"RESCENE","b":"k_pop","e":4,"bpm":135,"lang":"ko","m":["신남","설렘"],"id":"6GNvsmhrkdPp5skYLq42nY","local":false},{"i":224,"t":"Lonely but together","a":"neu","b":"kr_indie","e":1,"bpm":94,"lang":"ko","m":["차분","새벽"],"id":"1vZAZ4bfPPxDZIgg6zbasJ","local":false},{"i":225,"t":"일요일 맑음","a":"러브홀릭","b":"old_ballad","e":2,"bpm":95,"lang":"ko","m":["차분","우울"],"id":"51mkeEKzt8ckaKZ6MY1bj2","local":false},{"i":226,"t":"Dies Irae Breakbeat","a":"Leon T.","b":"kr_indie","e":2,"bpm":90,"lang":"ko","m":["차분","새벽"],"id":"07Wq5dHqoUms9P0VL1HbRq","local":false},{"i":227,"t":"Darken","a":"ZUTOMAYO","b":"jp_rock","e":3,"bpm":150,"lang":"ja","m":["설렘","집중"],"id":"15mJGBtLcTAURQ0XOdDXXy","local":false},{"i":228,"t":"UhUh","a":"RESCENE","b":"k_pop","e":4,"bpm":131,"lang":"ko","m":["신남","설렘"],"id":"7DLH6I3RzLhMEiaOfahwbm","local":false},{"i":229,"t":"여우야","a":"조은세","b":"kr_indie","e":2,"bpm":96,"lang":"ko","m":["차분","새벽"],"id":"3FtUImuXbZgsBxJ1UM0lwA","local":false},{"i":230,"t":"Start To Shine (feat. Gaeko)","a":"Gyubin, 개코","b":"kr_hiphop","e":3,"bpm":99,"lang":"ko","m":["설렘","신남"],"id":"1KD8juWhiZFJv0gcSpZVSQ","local":false},{"i":231,"t":"Villian","a":"JAEKY K","b":"kr_hiphop","e":3,"bpm":94,"lang":"ko","m":["설렘","신남"],"id":"54Eh3FMkzQD91qPmTH9S3z","local":false},{"i":232,"t":"《두치와 뿌꾸》 엔딩 (1996, KBS2)","a":"(로컬 파일)","b":"old_ballad","e":2,"bpm":90,"lang":"ko","m":["차분","우울"],"id":"","local":true},{"i":233,"t":"비가 내리면 (When it Rains)","a":"자이언트핑크, Babylon","b":"kr_indie","e":1,"bpm":91,"lang":"ko","m":["차분","새벽"],"id":"5lpTPbmhRiN3qac46CUtyn","local":false},{"i":234,"t":"NO FIGHT","a":"정은지","b":"k_pop","e":4,"bpm":114,"lang":"ko","m":["신남","설렘"],"id":"2JDzFaxzGnAf12N2xxWH3p","local":false},{"i":235,"t":"Last Scene","a":"Rollercoaster","b":"band_rock","e":4,"bpm":103,"lang":"ko","m":["신남","운동"],"id":"73HLj8nLVJZ0vqShX5Q1TR","local":false},{"i":236,"t":"Replay","a":"Baby DONT Cry","b":"k_pop","e":4,"bpm":125,"lang":"ko","m":["신남","설렘"],"id":"1OacIJuG9iPovyPMiwRfzW","local":false},{"i":237,"t":"이 여름이 끝나고","a":"Bosudongcooler","b":"band_rock","e":4,"bpm":110,"lang":"ko","m":["신남","운동"],"id":"5jXMdPAy6qaF8IScDFqZNR","local":false},{"i":238,"t":"Sunshine Coast","a":"aiai, Naji","b":"kr_hiphop","e":3,"bpm":101,"lang":"ko","m":["설렘","신남"],"id":"3F7aCMePBPszLTbvojA2U1","local":false},{"i":239,"t":"In Touch","a":"DAUL, Charli Taft","b":"west_pop","e":3,"bpm":104,"lang":"en","m":["신남","설렘"],"id":"3gnlEjMRzlZzB26J8xIPpb","local":false},{"i":240,"t":"I Fall In Love Too Easily","a":"Chet Baker","b":"jazz_lofi","e":1,"bpm":74,"lang":"en","m":["차분","새벽"],"id":"0F845nujLVqCb0XMZCh5Pc","local":false},{"i":241,"t":"S.A.D","a":"The Volunteers","b":"band_rock","e":4,"bpm":107,"lang":"ko","m":["신남","운동"],"id":"4m5fpN1QBvFPepYfmnXoa0","local":false},{"i":242,"t":"I Found Out","a":"niko rain, EJEAN","b":"west_pop","e":3,"bpm":110,"lang":"en","m":["신남","설렘"],"id":"0GfP2Zkn3XK4n6sURwGgxN","local":false},{"i":243,"t":"RudE TaLK","a":"NMIXX","b":"k_pop","e":4,"bpm":125,"lang":"ko","m":["신남","설렘"],"id":"07xGlLwmzOF1YFogQyfSeJ","local":false},{"i":244,"t":"? (Prod. Color)","a":"LEON","b":"kr_hiphop","e":3,"bpm":113,"lang":"ko","m":["설렘","신남"],"id":"6MTVg4OSMik8qpYa53jOKi","local":false},{"i":245,"t":"MOVE","a":"aiai, homs","b":"kr_hiphop","e":4,"bpm":118,"lang":"ko","m":["설렘","신남"],"id":"3SBlsblUOa6F8ykK8K80fV","local":false},{"i":246,"t":"Sandfunk (feat. ELO)","a":"aiai, ELO","b":"kr_hiphop","e":3,"bpm":103,"lang":"ko","m":["설렘","신남"],"id":"0vM0bCUmKNGAGTmie7yv13","local":false},{"i":247,"t":"꿈꾸던 어른이 되었나요?","a":"머무르","b":"kr_indie","e":2,"bpm":90,"lang":"ko","m":["차분","새벽"],"id":"67bXdWqZFre6lPaBIaZHlO","local":false},{"i":248,"t":"Bad Bye","a":"류수정","b":"k_pop","e":4,"bpm":128,"lang":"ko","m":["신남","설렘"],"id":"4A94jN03m4Z2HbZFHPD7xI","local":false},{"i":249,"t":"문제적남자 (Feat. RAKUNELAMA)","a":"h3hyeon, RAKUNELAMA","b":"kr_hiphop","e":3,"bpm":109,"lang":"ko","m":["설렘","신남"],"id":"1Emj8AKkSLZbPw14gAsdUI","local":false},{"i":250,"t":"우리 참 좋았는데 (DUET WITH 박정현)","a":"성시경","b":"old_ballad","e":2,"bpm":72,"lang":"ko","m":["차분","우울"],"id":"0CKbsTdQB05lemWOAzWgI9","local":false},{"i":251,"t":"Know My Name","a":"True Damage, League of Legends, Sofía Reyes, VIC MENSA, Coco Jones, 소연, i-dle","b":"game_ost","e":4,"bpm":119,"lang":"en","m":["집중","운동"],"id":"3s2YCL5LHLzXWbw7ezQru3","local":false},{"i":252,"t":"마지막 편지 그것조차 거짓(또 다른 진심)","a":"Novasonic","b":"kr_indie","e":1,"bpm":74,"lang":"ko","m":["차분","새벽"],"id":"56GaU1MQDBhscqnFK9o1FC","local":false},{"i":253,"t":"Prelude in G Minor, Op. 23, No. 5 - Live at Philharmonie, Berlin, 2018","a":"Sergei Rachmaninoff, Yuja Wang","b":"jazz_lofi","e":1,"bpm":66,"lang":"en","m":["차분","새벽"],"id":"4RUKTGXjyRM3wdksLgC6Ca","local":false},{"i":254,"t":"春泥棒","a":"ヨルシカ","b":"jp_rock","e":3,"bpm":113,"lang":"ja","m":["설렘","집중"],"id":"1rr2DJOxV0sHXeUXCAz1yf","local":false},{"i":255,"t":"힘을 내요, 미스터 김","a":"Rollercoaster","b":"band_rock","e":4,"bpm":108,"lang":"ko","m":["신남","운동"],"id":"4JdNX4HwH9d0RP9XyaIKoW","local":false},{"i":256,"t":"낭만 보내기","a":"소연","b":"old_ballad","e":2,"bpm":75,"lang":"ko","m":["차분","우울"],"id":"3KYITL9oG78MwmL7qQrqeM","local":false},{"i":257,"t":"強盗と花束","a":"ヨルシカ","b":"jp_rock","e":3,"bpm":119,"lang":"ja","m":["설렘","집중"],"id":"0mgABgKDsaSGnTOLcjlHWd","local":false},{"i":258,"t":"HICCUP","a":"조유리","b":"k_pop","e":4,"bpm":120,"lang":"ko","m":["신남","설렘"],"id":"6BMNPNij62XvOMQF5BPGym","local":false},{"i":259,"t":"수선화","a":"초승","b":"kr_indie","e":1,"bpm":87,"lang":"ko","m":["차분","새벽"],"id":"2CCLOwWYjD6LYil5fQJcUJ","local":false},{"i":260,"t":"edamame","a":"bbno$, Rich Brian","b":"west_pop","e":3,"bpm":104,"lang":"en","m":["신남","설렘"],"id":"1golLrmqyxDWedF7YUHCOD","local":false},{"i":261,"t":"Gorilla Grip","a":"Greg Shilling","b":"west_pop","e":3,"bpm":120,"lang":"en","m":["신남","설렘"],"id":"6bt3Hq6ce61MnDgspiu2Kq","local":false},{"i":262,"t":"Hippocampal Pain","a":"ZUTOMAYO","b":"jp_rock","e":3,"bpm":143,"lang":"ja","m":["설렘","집중"],"id":"769AavUVMqBFCrFE94NCXN","local":false},{"i":263,"t":"사랑인가요","a":"HowL, 제이","b":"old_ballad","e":2,"bpm":82,"lang":"ko","m":["차분","우울"],"id":"73lwJ5P3ehRiqimOgWiwOE","local":false},{"i":264,"t":"Toast (with. HUMMING URBAN STEREO)","a":"제이, HUMMING URBAN STEREO","b":"kr_hiphop","e":3,"bpm":97,"lang":"ko","m":["설렘","신남"],"id":"613vPoEvmygsq0CG6mqTzu","local":false},{"i":265,"t":"유영","a":"COOING","b":"kr_indie","e":1,"bpm":99,"lang":"ko","m":["차분","새벽"],"id":"7mTW8hPBjfs9pvdHaq8FFE","local":false},{"i":266,"t":"Remember (Goodbye Daddy)","a":"COOING","b":"kr_indie","e":2,"bpm":100,"lang":"ko","m":["차분","새벽"],"id":"5x4SZqjm8gxxonbxxbUA4N","local":false},{"i":267,"t":"Inspiration Comes and Goes, Record It Straight onto My Phone","a":"LambC","b":"jazz_lofi","e":1,"bpm":77,"lang":"en","m":["차분","새벽"],"id":"4HCYX9783I9Ds7Wwj8VlfS","local":false},{"i":268,"t":"Play Pretend","a":"jomm, readyaimfire27","b":"kr_hiphop","e":3,"bpm":98,"lang":"ko","m":["설렘","신남"],"id":"5ceipTWlE2WtG9R9h0R9B2","local":false},{"i":269,"t":"Happysad","a":"음성녹음","b":"kr_indie","e":2,"bpm":106,"lang":"ko","m":["차분","새벽"],"id":"1WRKu53wY2R8wdIMHrh6Fj","local":false},{"i":270,"t":"Morning","a":"Miller","b":"jazz_lofi","e":1,"bpm":83,"lang":"en","m":["차분","새벽"],"id":"6rkz9y5vT8HuajY4MAKeCc","local":false},{"i":271,"t":"Falling Down","a":"jisokuryClub","b":"jazz_lofi","e":1,"bpm":78,"lang":"en","m":["차분","새벽"],"id":"3xVvOAl3nu6OHmLah5KBAa","local":false},{"i":272,"t":"아쉬워","a":"PATEKO, 민지운","b":"kr_indie","e":2,"bpm":91,"lang":"ko","m":["차분","새벽"],"id":"4H6D4H2mLkSDHkMCnVTNuT","local":false},{"i":273,"t":"魔性","a":"ヨルシカ","b":"jp_rock","e":3,"bpm":102,"lang":"ja","m":["설렘","집중"],"id":"3fHEu6oWkIQKl6llskFvSQ","local":false},{"i":274,"t":"The Christmas Song (Merry Christmas To You)","a":"Nat King Cole","b":"jazz_lofi","e":1,"bpm":78,"lang":"en","m":["차분","새벽"],"id":"4PS1e8f2LvuTFgUs1Cn3ON","local":false},{"i":275,"t":"Aoku Aoku Hikaru feat. ACANE, nulut","a":"Lanndo, ZUTOMAYO, ACANE, nulut","b":"jp_rock","e":3,"bpm":141,"lang":"ja","m":["설렘","집중"],"id":"0UGnaxImsUffoaSkND3ueq","local":false},{"i":276,"t":"Switchblade (feat. Ty Dolla $ign)","a":"aespa, Ty Dolla $ign","b":"k_pop","e":4,"bpm":126,"lang":"en","m":["신남","설렘"],"id":"33DfsEPb0aAtrQS4pbJP0f","local":false},{"i":277,"t":"She's in someone's locket","a":"The Volunteers","b":"band_rock","e":4,"bpm":95,"lang":"ko","m":["신남","운동"],"id":"6PPqwJDLJBV8PpqP6f6Dp8","local":false},{"i":278,"t":"happysad","a":"The Volunteers","b":"band_rock","e":4,"bpm":111,"lang":"ko","m":["신남","운동"],"id":"4FWmFFEg5kBIs7yhC46GWR","local":false},{"i":279,"t":"Nual Beach","a":"jisokuryClub","b":"jazz_lofi","e":1,"bpm":80,"lang":"en","m":["차분","새벽"],"id":"6uDfBmMrGjn668UvPu7WYG","local":false},{"i":280,"t":"불안 나무","a":"MRCH","b":"kr_indie","e":2,"bpm":93,"lang":"ko","m":["차분","새벽"],"id":"2DVPsMcLNW3kBqgotV274u","local":false},{"i":281,"t":"聖者たち","a":"natori","b":"jp_rock","e":3,"bpm":96,"lang":"ja","m":["설렘","집중"],"id":"7rncGkC5MkcHVtX51kY6lX","local":false},{"i":282,"t":"Peachy","a":"MRCH","b":"kr_indie","e":2,"bpm":104,"lang":"ko","m":["차분","새벽"],"id":"7m9TTtjVC8QOByp3SKFf6s","local":false},{"i":283,"t":"エイミー","a":"ヨルシカ","b":"jp_rock","e":3,"bpm":115,"lang":"ja","m":["설렘","집중"],"id":"2QIefK7s0YYQI0hXlrSWLc","local":false},{"i":284,"t":"ライラック","a":"Mrs. GREEN APPLE","b":"jp_rock","e":3,"bpm":134,"lang":"ja","m":["설렘","집중"],"id":"21VsLvoE7elUmJZLSawaMh","local":false},{"i":285,"t":"アドレナ","a":"YOASOBI","b":"jp_rock","e":4,"bpm":125,"lang":"ja","m":["설렘","집중"],"id":"6opptJmdOo9CLXs2zEaPK6","local":false},{"i":286,"t":"Tide","a":"aiai","b":"kr_indie","e":2,"bpm":105,"lang":"ko","m":["차분","새벽"],"id":"6YxmdS7gLSHfNFbtbMX7PY","local":false},{"i":287,"t":"네가 원하는 대로 !","a":"whvts, B JYUN., 려진","b":"kr_indie","e":2,"bpm":100,"lang":"ko","m":["차분","새벽"],"id":"1y7b0Y4nlHgS2DEFfv8RsV","local":false},{"i":1001,"t":"怪獣の花唄","a":"Vaundy","b":"jp_rock","e":4,"bpm":150,"lang":"ja","m":["신남"],"id":"","rec":true,"local":false},{"i":1002,"t":"NIGHT DANCER","a":"imase","b":"jp_rock","e":3,"bpm":120,"lang":"ja","m":["설렘"],"id":"","rec":true,"local":false},{"i":1003,"t":"光るとき","a":"羊文学","b":"jp_rock","e":2,"bpm":86,"lang":"ja","m":["차분","새벽"],"id":"","rec":true,"local":false},{"i":1004,"t":"地球儀 (Chikyugi)","a":"Kenshi Yonezu","b":"jp_rock","e":2,"bpm":82,"lang":"ja","m":["차분","집중"],"id":"","rec":true,"local":false},{"i":1005,"t":"残響散歌","a":"Aimer","b":"jp_rock","e":4,"bpm":170,"lang":"ja","m":["운동","신남"],"id":"","rec":true,"local":false},{"i":1006,"t":"Pretender","a":"Official髭男dism","b":"jp_rock","e":4,"bpm":94,"lang":"ja","m":["신남"],"id":"","rec":true,"local":false},{"i":1007,"t":"난춘 (NAN CHUN)","a":"새소년","b":"band_rock","e":3,"bpm":118,"lang":"ko","m":["설렘"],"id":"","rec":true,"local":false},{"i":1008,"t":"seasons","a":"wave to earth","b":"kr_indie","e":1,"bpm":84,"lang":"en","m":["차분","새벽"],"id":"","rec":true,"local":false},{"i":1009,"t":"청춘 (Youth)","a":"우효 (Oohyo)","b":"kr_indie","e":2,"bpm":100,"lang":"ko","m":["설렘","차분"],"id":"","rec":true,"local":false},{"i":1010,"t":"Antifreeze","a":"검정치마","b":"band_rock","e":4,"bpm":150,"lang":"ko","m":["신남","운동"],"id":"","rec":true,"local":false},{"i":1011,"t":"주저하는 연인들을 위해","a":"잔나비","b":"band_rock","e":3,"bpm":140,"lang":"ko","m":["신남","설렘"],"id":"","rec":true,"local":false},{"i":1012,"t":"Summer","a":"The Volunteers","b":"band_rock","e":2,"bpm":92,"lang":"ko","m":["새벽","차분"],"id":"","rec":true,"local":false},{"i":1013,"t":"From The Start","a":"Laufey","b":"jazz_lofi","e":2,"bpm":88,"lang":"en","m":["설렘","차분"],"id":"","rec":true,"local":false},{"i":1014,"t":"Show Me How","a":"Men I Trust","b":"jazz_lofi","e":1,"bpm":78,"lang":"en","m":["차분","새벽"],"id":"","rec":true,"local":false},{"i":1015,"t":"Best Part (feat. H.E.R.)","a":"Daniel Caesar","b":"jazz_lofi","e":1,"bpm":76,"lang":"en","m":["차분","설렘"],"id":"","rec":true,"local":false},{"i":1016,"t":"한 페이지가 될 수 있게","a":"DAY6","b":"band_rock","e":4,"bpm":120,"lang":"ko","m":["신남"],"id":"","rec":true,"local":false},{"i":1017,"t":"Live My Life","a":"aespa","b":"k_pop","e":4,"bpm":132,"lang":"ko","m":["신남"],"id":"","rec":true,"local":false},{"i":1018,"t":"Either Way","a":"IVE","b":"k_pop","e":3,"bpm":112,"lang":"ko","m":["설렘","차분"],"id":"","rec":true,"local":false},{"i":1019,"t":"Sugarcoat (NATTY Solo)","a":"KISS OF LIFE","b":"k_pop","e":3,"bpm":118,"lang":"ko","m":["설렘","신남"],"id":"","rec":true,"local":false},{"i":1020,"t":"Spring Snow","a":"10cm","b":"kr_indie","e":2,"bpm":96,"lang":"ko","m":["차분","새벽"],"id":"","rec":true,"local":false}],"buckets":{"jp_rock":{"genre":"J-POP / 일본 록"},"kr_indie":{"genre":"한국 인디·R&B"},"kr_hiphop":{"genre":"한국 힙합·R&B"},"k_pop":{"genre":"K-POP"},"old_ballad":{"genre":"2000년대 한국 발라드"},"band_rock":{"genre":"밴드 록"},"jazz_lofi":{"genre":"재즈·로파이"},"game_ost":{"genre":"게임·OST"},"west_pop":{"genre":"해외 팝"}}}</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const TRACKS = DATA.tracks;
+const GENRE = Object.fromEntries(Object.entries(DATA.buckets).map(([k,v])=>[k,v.genre]));
+const BNAME = {jp_rock:'일본 록·J-POP', kr_indie:'한국 인디·R&B', kr_hiphop:'한국 힙합·R&B',
+  k_pop:'K-POP', old_ballad:'2000년대 발라드', band_rock:'밴드 록', jazz_lofi:'재즈·로파이',
+  game_ost:'게임·OST', west_pop:'해외 팝'};
+const LANGS = {ko:'한국어', ja:'일본어', en:'영어'};
+
+const SITS = [
+  {id:'drive',  label:'🚗 드라이브', e:3.5, bpm:124, moods:['설렘','신남']},
+  {id:'focus',  label:'📚 집중',     e:1.6, bpm:96,  moods:['집중','차분']},
+  {id:'dawn',   label:'🌙 새벽',     e:1.4, bpm:88,  moods:['새벽','차분','우울']},
+  {id:'work',   label:'🏃 운동',     e:4.4, bpm:142, moods:['운동','신남']},
+  {id:'cafe',   label:'☕ 카페',     e:2.4, bpm:104, moods:['차분','설렘']},
+  {id:'switch', label:'🔁 기분전환', e:4.0, bpm:130, moods:['신남','설렘']},
+];
+const MOODS = ['전체','설렘','차분','우울','신남'];
+const TEMPOS = [{id:'all',label:'전체',min:0,max:999},{id:'slow',label:'느림',min:0,max:95},{id:'mid',label:'보통',min:96,max:125},{id:'fast',label:'빠름',min:126,max:999}];
+const LANGSEL = [{id:'all',label:'전체'},{id:'ko',label:'한국어'},{id:'ja',label:'일본어'},{id:'en',label:'영어'}];
+
+const state = {sit:'dawn', mood:'전체', tempo:'all', lang:'all', seen:new Set(), shown:[]};
+const KEY = 'kimtune.v1';
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {w:{}, likes:[], passes:0}; }catch(e){ return {w:{}, likes:[], passes:0}; } }
+function save(s){ try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){} }
+let store = load();
+if(!store.w) store.w = {};
+if(!store.likes) store.likes = [];
+if(store.passes === undefined) store.passes = 0;
+
+/* ---------- UI ---------- */
+function renderChips(){
+  const el = document.getElementById('sit'); el.innerHTML='';
+  SITS.forEach(s=>{
+    const b=document.createElement('button'); b.className='chip'+(state.sit===s.id?' on':''); b.textContent=s.label;
+    b.onclick=()=>{ state.sit=s.id; renderChips(); };
+    el.appendChild(b);
+  });
+  const em = document.getElementById('mood'); em.innerHTML='';
+  MOODS.forEach(m=>{
+    const b=document.createElement('button'); b.className='chip moodchip'+(state.mood===m?' on':''); b.textContent=m;
+    b.onclick=()=>{ state.mood=m; renderChips(); };
+    em.appendChild(b);
+  });
+  const et = document.getElementById('tempo'); et.innerHTML='';
+  TEMPOS.forEach(t=>{
+    const b=document.createElement('button'); b.className='chip'+(state.tempo===t.id?' on':''); b.textContent=t.label;
+    b.onclick=()=>{ state.tempo=t.id; renderChips(); };
+    et.appendChild(b);
+  });
+  const elg = document.getElementById('lang'); elg.innerHTML='';
+  LANGSEL.forEach(l=>{
+    const b=document.createElement('button'); b.className='chip'+(state.lang===l.id?' on':''); b.textContent=l.label;
+    b.onclick=()=>{ state.lang=l.id; renderChips(); };
+    elg.appendChild(b);
+  });
+}
+
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'), 1500);
+}
+
+/* ---------- 추천 엔진 ---------- */
+function score(tr, sit, mood, tempo){
+  let s = 0;
+  s += 3 - Math.min(3, Math.abs(tr.e - sit.e) * 1.4);          // 에너지 근접
+  s += 2 - Math.min(2, Math.abs(tr.bpm - sit.bpm) / 42);        // 템포 근접
+  if(sit.moods.some(m => tr.m.includes(m))) s += 1.2;           // 상황 무드
+  if(mood !== '전체' && tr.m.includes(mood)) s += 1.8;          // 고른 기분
+  if(mood !== '전체' && !tr.m.includes(mood)) s -= 0.6;
+  if(tempo !== 'all'){
+    const t = TEMPOS.find(x=>x.id===tempo);
+    if(tr.bpm >= t.min && tr.bpm <= t.max) s += 1.4; else s -= 1.0;
+  }
+  const w = store.w[tr.b] || 0;                                  // 학습 가중치
+  s += w * 2.2;
+  if(tr.rec) s += 1.2;                                           // 새 추천곡 우대
+  s += Math.random() * 0.9;
+  return s;
+}
+
+function buildPool(){
+  let pool = TRACKS.filter(t => !state.seen.has(t.i));
+  if(state.lang !== 'all') pool = pool.filter(t => t.lang === state.lang);
+  if(state.mood !== '전체') pool = pool.filter(t => t.m !== null && (t.m.includes(state.mood) || Math.random()<0.25));
+  return pool;
+}
+
+function pick(n){
+  const sit = SITS.find(s=>s.id===state.sit);
+  let pool = buildPool();
+  // 새 추천 곡이 3곡 미만으로 남았으면 되감아, 매번 새 곡이 중심이 되게 한다
+  if(pool.filter(t => t.rec).length < Math.min(3, n)){
+    TRACKS.filter(t => t.rec).forEach(t => state.seen.delete(t.i));
+    pool = buildPool();
+  }
+  if(pool.length < n){
+    state.seen.clear();
+    pool = TRACKS.slice();
+    if(state.lang !== 'all') pool = pool.filter(t => t.lang === state.lang);
+  }
+  const sorted = pool
+    .map(t => ({t, s: score(t, sit, state.mood, state.tempo)}))
+    .sort((a,b)=>b.s-a.s)
+    .map(x=>x.t);
+  // 새 추천 곡을 먼저 배정하고, 새 곡이 모자라면 큐레이션 곡으로 남은 자리를 채운다
+  const ranked = sorted.filter(t => t.rec).slice(0, n);
+  for(const t of sorted){
+    if(ranked.length >= n) break;
+    if(!ranked.includes(t)) ranked.push(t);
+  }
+  ranked.forEach(t=>state.seen.add(t.i));
+  state.shown = ranked;
+  renderCards(ranked, sit);
+  document.getElementById('stats').style.display = 'block';
+  renderBars();
+  document.getElementById('hint').textContent =
+    `${sit.label} · ${state.mood==='전체'?'기분 전체':state.mood} · ${TEMPOS.find(t=>t.id===state.tempo).label} · ${LANGSEL.find(l=>l.id===state.lang).label} 기준 5곡`;
+}
+
+function why(tr, sit){
+  const parts = [];
+  parts.push(`${BNAME[tr.b]} · BPM≈${tr.bpm}`);
+  const hit = sit.moods.filter(m=>tr.m.includes(m));
+  if(hit.length) parts.push(`${hit.join('·')} 무드`);
+  const w = store.w[tr.b] || 0;
+  if(w > 0.2) parts.push(`${BNAME[tr.b]}를 자주 좋아요`);
+  if(w < -0.2) parts.push(`다만 ${BNAME[tr.b]} 패스가 있었음`);
+  if(tr.rec) parts.push('새로 찾은 추천');
+  return '왜 이 곡? ' + parts.join(' · ');
+}
+
+function spLink(tr){
+  if(tr.id) return 'https://open.spotify.com/track/' + tr.id;
+  return 'https://open.spotify.com/search/' + encodeURIComponent(tr.t + ' ' + tr.a);
+}
+function ytLink(tr){ return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(tr.t + ' ' + tr.a); }
+
+function melonQuery(tr){
+  return tr.a && tr.a !== '(로컬 파일)' ? tr.t + ' ' + tr.a : tr.t;
+}
+function melonLink(tr){
+  const q = encodeURIComponent(melonQuery(tr));
+  const mobile = /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
+  return mobile
+    ? 'https://m2.melon.com/search/searchResult.htm?s=' + q
+    : 'https://www.melon.com/search/total/index.htm?q=' + q;
+}
+
+function renderCards(list, sit){
+  const box = document.getElementById('cards'); box.innerHTML='';
+  list.forEach(tr=>{
+    const c = document.createElement('div'); c.className='card';
+    c.innerHTML = `
+      <div class="top">
+        <div>
+          <div class="ttl">${esc(tr.t)}</div>
+          <div class="art">${esc(tr.a)}</div>
+        </div>
+        <div class="badge ${tr.rec?'new':'own'}">${tr.rec?'새 추천':'큐레이션'}</div>
+      </div>
+      <div class="tags">
+        <span class="tag">${BNAME[tr.b]}</span>
+        <span class="tag">${LANGS[tr.lang]||''}</span>
+        <span class="tag">BPM≈${tr.bpm}</span>
+        <span class="tag">에너지 ${'●'.repeat(tr.e)}${'○'.repeat(5-tr.e)}</span>
+      </div>
+      <div class="why">${esc(why(tr, sit))}</div>
+      <div class="acts">
+        <button class="like">👍 좋아요</button>
+        <button class="pass">👎 패스</button>
+        <button class="sp">🟢 스포티파이</button>
+        <button class="yt">▶ 유튜브</button>
+        <button class="melon">🍈 멜론</button>
+      </div>`;
+    c.querySelector('.like').onclick = ()=>{ feedback(tr, +1); c.style.opacity=.45; };
+    c.querySelector('.pass').onclick = ()=>{ feedback(tr, -1); c.style.opacity=.45; };
+    c.querySelector('.sp').onclick = ()=> window.open(spLink(tr), '_blank', 'noopener');
+    c.querySelector('.yt').onclick = ()=> window.open(ytLink(tr), '_blank', 'noopener');
+    c.querySelector('.melon').onclick = ()=> window.open(melonLink(tr), '_blank', 'noopener');
+    box.appendChild(c);
+  });
+}
+
+function feedback(tr, dir){
+  if(dir > 0){
+    store.w[tr.b] = Math.min(3, (store.w[tr.b]||0) + 0.25);
+    if(!store.likes.some(x=>x.i===tr.i)) store.likes.unshift({i:tr.i, t:tr.t, a:tr.a, b:tr.b, id:tr.id, at:Date.now()});
+    store.likes = store.likes.slice(0, 300);
+    toast('좋아요 — ' + BNAME[tr.b] + ' 가중치 ↑');
+  } else {
+    store.w[tr.b] = Math.max(-2, (store.w[tr.b]||0) - 0.15);
+    store.passes = (store.passes||0) + 1;
+    toast('패스 — ' + BNAME[tr.b] + ' 가중치 ↓');
+  }
+  save(store); renderBars();
+}
+
+function renderBars(){
+  const box = document.getElementById('bars'); if(!box) return;
+  const rows = Object.entries(BNAME).map(([k,name])=>({k,name, w: store.w[k]||0}))
+    .filter(r=>Math.abs(r.w)>0.001).sort((a,b)=>b.w-a.w);
+  if(!rows.length){ box.innerHTML = '<div class="mini">아직 기록이 없습니다. 좋아요/패스를 누르면 여기에 쌓입니다.</div>'; return; }
+  const max = Math.max(...rows.map(r=>Math.abs(r.w)), 0.5);
+  box.innerHTML = rows.map(r=>`
+    <div class="bar"><div class="nm">${r.name}</div>
+      <div class="tr"><div class="fl" style="width:${Math.round(Math.abs(r.w)/max*100)}%;${r.w<0?'background:linear-gradient(90deg,#ff5d73,#8b5cf6)':''}"></div></div>
+      <div class="vl">${r.w>0?'+':''}${r.w.toFixed(2)}</div></div>`).join('');
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ---------- events ---------- */
+document.getElementById('pick').onclick = ()=> pick(5);
+document.getElementById('reset').onclick = ()=>{
+  store = {w:{}, likes:[], passes:0}; save(store); renderBars(); toast('학습 기록을 지웠습니다');
+};
+
+renderChips(); renderBars();
+// 첫 진입 시 한 번 추천
+window.addEventListener('load', ()=>{ if(!document.getElementById('cards').children.length) pick(5); });
+</script>
+</body>
+</html>
