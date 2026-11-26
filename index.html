@@ -177,7 +177,14 @@ function save(s){
     localStorage.setItem(KEY, JSON.stringify(s));
   }catch(e){}
 }
-function markSeen(id){ seenSet.add(String(id)); }
+function markSeen(id, key){
+  if(id !== undefined && id !== null) seenSet.add(String(id));
+  if(key) seenSet.add('k|' + key);
+}
+/* 같은 곡이 다른 앨범·발매본으로 또 나오지 않도록 제목+아티스트 기준 키 */
+function songKey(tr){
+  return baseTitle(tr.t) + '|' + String(tr.a || '').toLowerCase().replace(/[^0-9a-z가-힣ぁ-んァ-ヶ]/g, '');
+}
 
 /* ---------- UI ---------- */
 function renderChips(){
@@ -244,7 +251,7 @@ function pickLocal(n, sit){
   let pool = localPool();
   if(pool.length < n){
     // 내장 곡만 되감기 (실시간 발굴 곡 기록은 유지)
-    TRACKS.forEach(t => seenSet.delete(String(t.i)));
+    Array.from(seenSet).forEach(function(k){ if(String(k).indexOf('am') !== 0) seenSet.delete(k); });
     store.fw = (store.fw || 0) + 1;
     pool = localPool();
   }
@@ -254,7 +261,7 @@ function pickLocal(n, sit){
     .sort((a,b)=>b.s-a.s)
     .slice(0, n)
     .map(x=>x.t);
-  ranked.forEach(t => markSeen(t.i));
+  ranked.forEach(function(t){ markSeen(t.i, songKey(t)); });
   return ranked;
 }
 
@@ -525,6 +532,7 @@ function remember(term){
 
 function passFilters(tr){
   if(seenSet.has(String(tr.i))) return false;
+  if(seenSet.has('k|' + songKey(tr))) return false;
   if(state.lang !== 'all' && tr.lang !== state.lang) return false;
   if(state.tempo !== 'all'){
     const t = TEMPOS.find(function(x){ return x.id === state.tempo; });
@@ -579,7 +587,7 @@ async function livePick(n, sit, budgetMs){
     got.push(head);
     rest.forEach(function(x){ got.push(x); });
   }
-  got.forEach(function(tr){ markSeen(tr.i); LIVE.mined++; });
+  got.forEach(function(tr){ markSeen(tr.i, songKey(tr)); LIVE.mined++; });
   return got;
 }
 
